@@ -8,10 +8,9 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 
 /**
- * Password hashing with PBKDF2-HMAC-SHA256 from the JDK (no extra libraries).
- * Stored format: "pbkdf2$iterations$saltBase64$hashBase64". If the project adds
- * Spring Security, its BCryptPasswordEncoder is an equally good choice.
- * Shared module from BS Codes.
+ * Password hashing with PBKDF2-HMAC-SHA256 from the JDK (no extra libraries). Stored format:
+ * "pbkdf2$iterations$saltBase64$hashBase64". If the project adds Spring Security, its
+ * BCryptPasswordEncoder is an equally good choice. Shared module from BS Codes.
  */
 public final class PasswordHasher {
 

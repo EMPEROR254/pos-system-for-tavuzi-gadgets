@@ -9,14 +9,15 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
 /**
- * Sends STK Push requests ("Lipa na M-Pesa Online"): the customer gets a PIN
- * prompt on their phone. The result arrives later at the callback URL (see
- * MpesaCallbackController). Shared module from BS Codes - tested; reuse it.
+ * Sends STK Push requests ("Lipa na M-Pesa Online"): the customer gets a PIN prompt on their phone.
+ * The result arrives later at the callback URL (see MpesaCallbackController). Shared module from BS
+ * Codes - tested; reuse it.
  */
 @Component
 public class DarajaClient {
@@ -27,6 +28,8 @@ public class DarajaClient {
   private String token;
   private Instant tokenExpiresAt = Instant.EPOCH;
 
+  // Two constructors: tell Spring which one to use (the other is for tests).
+  @Autowired
   public DarajaClient(RestClient mpesaRestClient, MpesaProperties properties) {
     this(mpesaRestClient, properties, Clock.systemUTC());
   }
@@ -60,8 +63,8 @@ public class DarajaClient {
   }
 
   /**
-   * Asks the customer to pay. Daraja accepts whole shillings only, so the amount
-   * is rounded up. accountReference (max 12 chars) shows on the customer's statement.
+   * Asks the customer to pay. Daraja accepts whole shillings only, so the amount is rounded up.
+   * accountReference (max 12 chars) shows on the customer's statement.
    */
   public StkPushResult stkPush(
       String phone, BigDecimal amountKes, String accountReference, String description) {
@@ -92,7 +95,8 @@ public class DarajaClient {
             .body(StkPushResult.class);
     if (result == null || !"0".equals(result.responseCode())) {
       throw new MpesaException(
-          "STK Push was not accepted: " + (result == null ? "no response" : result.responseDescription()));
+          "STK Push was not accepted: "
+              + (result == null ? "no response" : result.responseDescription()));
     }
     return result;
   }

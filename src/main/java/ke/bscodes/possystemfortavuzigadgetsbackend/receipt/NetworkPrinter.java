@@ -6,8 +6,8 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 
 /**
- * Sends receipt bytes to a network thermal printer (raw TCP, usually port 9100).
- * Shared module from BS Codes.
+ * Sends receipt bytes to a network thermal printer (raw TCP, usually port 9100). Shared module from
+ * BS Codes.
  */
 public final class NetworkPrinter {
 

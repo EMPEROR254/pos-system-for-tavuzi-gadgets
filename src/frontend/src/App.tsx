@@ -1,21 +1,64 @@
-// Root component: the app frame (header with the theme switch) and the
-// current screen. Screens live in src/pages, shared UI in src/components,
-// API calls in src/services, helpers in src/utils.
-import { ThemeToggle } from './components/ThemeToggle'
-import { HomePage } from './pages/HomePage'
+// Root component: providers, the routes and app-wide pieces (offline banner,
+// toasts). Screens live in src/pages and are loaded only when opened, so the
+// first screen stays small and fast.
+import { QueryClientProvider } from '@tanstack/react-query'
+import { lazy, Suspense, useEffect } from 'react'
+import { BrowserRouter, Route, Routes } from 'react-router'
+import { AppLayout } from './components/AppLayout'
+import { OfflineBanner } from './components/OfflineBanner'
+import { RequireAuth, RequirePermission, SplashScreen } from './components/RequireAuth'
+import { Toaster } from './components/Toaster'
+import { restoreSession } from './services/auth'
+import { queryClient } from './services/queryClient'
+import { useSession } from './services/session'
+
+const LoginPage = lazy(() => import('./pages/LoginPage'))
+const HomePage = lazy(() => import('./pages/HomePage'))
+const AccountPage = lazy(() => import('./pages/AccountPage'))
+const UsersPage = lazy(() => import('./pages/admin/UsersPage'))
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
 
 export function App() {
+  useEffect(() => {
+    if (useSession.getState().status === 'checking') void restoreSession()
+  }, [])
+
   return (
-    <div className="min-h-screen">
-      <header className="sticky top-0 z-10 border-b border-border bg-background/80 backdrop-blur">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3">
-          <h1 className="text-lg font-semibold tracking-tight">{'POS System for Tavuzi Gadgets frontend'}</h1>
-          <ThemeToggle />
-        </div>
-      </header>
-      <main className="mx-auto max-w-5xl animate-fade-in p-6">
-        <HomePage />
-      </main>
-    </div>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <OfflineBanner />
+        <Suspense fallback={<SplashScreen />}>
+          <AppRoutes />
+        </Suspense>
+        <Toaster />
+      </BrowserRouter>
+    </QueryClientProvider>
+  )
+}
+
+export function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route
+        element={
+          <RequireAuth>
+            <AppLayout />
+          </RequireAuth>
+        }
+      >
+        <Route index element={<HomePage />} />
+        <Route path="account" element={<AccountPage />} />
+        <Route
+          path="admin/users"
+          element={
+            <RequirePermission permission="MANAGE_USERS">
+              <UsersPage />
+            </RequirePermission>
+          }
+        />
+        <Route path="*" element={<NotFoundPage />} />
+      </Route>
+    </Routes>
   )
 }

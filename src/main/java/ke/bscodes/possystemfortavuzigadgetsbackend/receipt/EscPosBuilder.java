@@ -3,8 +3,8 @@ package ke.bscodes.possystemfortavuzigadgetsbackend.receipt;
 import java.io.ByteArrayOutputStream;
 
 /**
- * A small ESC/POS command builder for thermal receipt printers (Epson, Xprinter
- * and most 58mm/80mm printers). Shared module from BS Codes.
+ * A small ESC/POS command builder for thermal receipt printers (Epson, Xprinter and most 58mm/80mm
+ * printers). Shared module from BS Codes.
  */
 public class EscPosBuilder {
 

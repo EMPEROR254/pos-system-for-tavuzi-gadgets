@@ -1,10 +1,11 @@
 package ke.bscodes.possystemfortavuzigadgetsbackend.security;
 
-/** Staff roles. Change together with RolePermissions to match the SRS. */
+/**
+ * Staff roles from the spec: Owner, Manager and Cashier / front desk. Change together with
+ * RolePermissions and the role check in db/migration/V1__init.sql.
+ */
 public enum Role {
   OWNER,
   MANAGER,
-  CASHIER,
-  STOCK_CLERK,
-  ACCOUNTANT
+  CASHIER
 }

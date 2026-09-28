@@ -4,7 +4,8 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light dark" />
-    <title>POS System for Tavuzi Gadgets frontend</title>
+    <title>Tavuzi Gadgets POS</title>
+    <meta name="theme-color" content="#0f766e" />
     <script>
       // Set light/dark before the page draws, so there is no flash of the
       // wrong theme. Same rules as src/utils/theme.ts.
@@ -12,8 +13,7 @@
         try {
           var theme = localStorage.getItem('theme') || 'system'
           var dark =
-            theme === 'dark' ||
-            (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+            theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
           document.documentElement.classList.toggle('dark', dark)
         } catch (e) {}
       })()

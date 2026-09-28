@@ -1,0 +1,9 @@
+# Local development: PostgreSQL from docker compose (docker compose up -d db).
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+logging:
+  level:
+    ke.bscodes: DEBUG

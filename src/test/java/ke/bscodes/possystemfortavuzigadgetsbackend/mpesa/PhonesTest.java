@@ -17,7 +17,8 @@ class PhonesTest {
 
   @Test
   void rejectsOtherNumbers() {
-    assertThatThrownBy(() -> Phones.normalize("12345")).isInstanceOf(IllegalArgumentException.class);
+    assertThatThrownBy(() -> Phones.normalize("12345"))
+        .isInstanceOf(IllegalArgumentException.class);
     assertThatThrownBy(() -> Phones.normalize("0202345678"))
         .isInstanceOf(IllegalArgumentException.class);
   }

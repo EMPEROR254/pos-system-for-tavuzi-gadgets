@@ -10,5 +10,6 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   build: { outDir: '../main/resources/static', emptyOutDir: true },
   server: { proxy: { '/api': 'http://localhost:8080' } },
-  test: { environment: 'jsdom' },
+  // globals: lets Testing Library clean up the page after each test.
+  test: { environment: 'jsdom', globals: true, setupFiles: ['./src/test/setup.ts'] },
 })

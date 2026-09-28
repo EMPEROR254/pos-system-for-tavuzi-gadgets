@@ -11,9 +11,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Receives STK Push results from Safaricom: POST /api/mpesa/callback.
- * This endpoint must be public (permit it in the security configuration) and
- * reachable over HTTPS. It always answers "Accepted" quickly.
+ * Receives STK Push results from Safaricom: POST /api/mpesa/callback. This endpoint must be public
+ * (permit it in the security configuration) and reachable over HTTPS. It always answers "Accepted"
+ * quickly.
  */
 @RestController
 @RequestMapping("/api/mpesa")

@@ -6,6 +6,9 @@
 2. Install Docker: `curl -fsSL https://get.docker.com | sh`.
 3. Copy the project (or `git clone`) to `/opt/app`, then `cp .env.example .env`
    and fill in real values (database password, JWT secret, M-Pesa keys).
+   On the first start the app creates the owner account from `OWNER_USERNAME` /
+   `OWNER_PASSWORD`; sign in, change that password under "My account", then add
+   staff under "Staff". Set `COOKIE_SECURE=true` only when the site runs on HTTPS.
 4. `docker compose up -d --build`.
 5. Put Nginx or Caddy in front for HTTPS (Caddy gets certificates automatically):
    `app.example.co.ke { reverse_proxy localhost:8080 }`.

@@ -14,5 +14,7 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
+      # Code style (google-java-format); fix locally with: mvn spotless:apply
+      - run: mvn -B spotless:check
       # Testcontainers uses the Docker engine available on GitHub runners.
       - run: mvn -B verify

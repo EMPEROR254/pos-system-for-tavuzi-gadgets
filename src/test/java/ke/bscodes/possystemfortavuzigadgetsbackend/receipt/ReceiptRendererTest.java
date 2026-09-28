@@ -43,6 +43,8 @@ class ReceiptRendererTest {
     assertThat(bytes[0]).isEqualTo((byte) 0x1B);
     assertThat(bytes[1]).isEqualTo((byte) 0x40);
     assertThat(bytes[bytes.length - 4]).isEqualTo((byte) 0x1D);
-    assertThat(new String(bytes, StandardCharsets.ISO_8859_1)).contains("SJ12ABC34D").contains("TOTAL KES");
+    assertThat(new String(bytes, StandardCharsets.ISO_8859_1))
+        .contains("SJ12ABC34D")
+        .contains("TOTAL KES");
   }
 }

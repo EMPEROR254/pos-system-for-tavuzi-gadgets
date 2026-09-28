@@ -1,0 +1,99 @@
+// The frame around every signed-in screen: header with the shop name,
+// navigation (a drawer on phones), theme switch and the user's menu.
+import { useState } from 'react'
+import { NavLink, Outlet } from 'react-router'
+import { logout } from '../services/auth'
+import { useSession } from '../services/session'
+import { can, roleLabel, type Permission } from '../utils/permissions'
+import { ThemeToggle } from './ThemeToggle'
+
+type NavItem = { to: string; label: string; permission?: Permission }
+
+// Later milestones add Sell, Stock, Customers and Reports here.
+const NAV: NavItem[] = [
+  { to: '/', label: 'Home' },
+  { to: '/admin/users', label: 'Staff', permission: 'MANAGE_USERS' },
+  { to: '/account', label: 'My account' },
+]
+
+export function AppLayout() {
+  const user = useSession((s) => s.user)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const items = NAV.filter((item) => !item.permission || can(user, item.permission))
+
+  const linkClass = ({ isActive }: { isActive: boolean }) =>
+    `flex min-h-11 items-center rounded-xl px-3 text-sm font-medium transition-colors ${
+      isActive ? 'bg-brand-soft text-foreground' : 'text-muted hover:bg-card hover:text-foreground'
+    }`
+
+  return (
+    <div className="min-h-screen">
+      <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2 sm:px-6">
+          <button
+            type="button"
+            className="-ml-2 flex size-11 items-center justify-center rounded-xl text-xl md:hidden"
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            {menuOpen ? '✕' : '☰'}
+          </button>
+          <NavLink to="/" className="flex items-center gap-2 font-semibold tracking-tight">
+            <span
+              aria-hidden
+              className="flex size-8 items-center justify-center rounded-lg bg-brand text-sm font-bold text-brand-foreground"
+            >
+              TG
+            </span>
+            <span className="hidden sm:inline">Tavuzi Gadgets</span>
+          </NavLink>
+          <nav aria-label="Main" className="ml-4 hidden items-center gap-1 md:flex">
+            {items.map((item) => (
+              <NavLink key={item.to} to={item.to} end className={linkClass}>
+                {item.label}
+              </NavLink>
+            ))}
+          </nav>
+          <div className="ml-auto flex items-center gap-3">
+            <ThemeToggle />
+            <div className="hidden text-right leading-tight lg:block">
+              <p className="text-sm font-medium">{user?.fullName}</p>
+              <p className="text-xs text-muted">{user && roleLabel(user.role)}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => void logout()}
+              className="hidden min-h-11 rounded-xl px-3 text-sm text-muted hover:bg-card hover:text-foreground md:block"
+            >
+              Sign out
+            </button>
+          </div>
+        </div>
+        {menuOpen && (
+          <nav aria-label="Main" className="animate-fade-in border-t border-border px-4 py-3 md:hidden">
+            <p className="px-3 pb-2 text-sm">
+              <span className="font-medium">{user?.fullName}</span>
+              <span className="text-muted"> · {user && roleLabel(user.role)}</span>
+            </p>
+            {items.map((item) => (
+              <NavLink key={item.to} to={item.to} end className={linkClass} onClick={() => setMenuOpen(false)}>
+                {item.label}
+              </NavLink>
+            ))}
+            <button
+              type="button"
+              onClick={() => void logout()}
+              className="flex min-h-11 w-full items-center rounded-xl px-3 text-sm font-medium text-danger hover:bg-card"
+            >
+              Sign out
+            </button>
+          </nav>
+        )}
+      </header>
+      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
+        <Outlet />
+      </main>
+    </div>
+  )
+}

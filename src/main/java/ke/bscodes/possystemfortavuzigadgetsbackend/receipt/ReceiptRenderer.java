@@ -9,9 +9,9 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
- * Lays out a sale as a receipt for 58mm (32 characters) or 80mm (48 characters)
- * paper. Prices include VAT (usual for Kenyan shelf prices); the VAT part is
- * shown separately. Shared module from BS Codes.
+ * Lays out a sale as a receipt for 58mm (32 characters) or 80mm (48 characters) paper. Prices
+ * include VAT (usual for Kenyan shelf prices); the VAT part is shown separately. Shared module from
+ * BS Codes.
  */
 public final class ReceiptRenderer {
 
@@ -48,10 +48,12 @@ public final class ReceiptRenderer {
       return BigDecimal.ZERO;
     }
     BigDecimal rate = BigDecimal.valueOf(receipt.vatRatePercent());
-    return total(receipt).multiply(rate).divide(rate.add(BigDecimal.valueOf(100)), 2, RoundingMode.HALF_UP);
+    return total(receipt)
+        .multiply(rate)
+        .divide(rate.add(BigDecimal.valueOf(100)), 2, RoundingMode.HALF_UP);
   }
 
-  /** "Sugar", "480.00" → "Sugar         480.00" in `width` characters. */
+  /** "Sugar", "480.00" → "Sugar 480.00" in `width` characters. */
   public static String columns(String left, String right, int width) {
     int room = width - right.length() - 1;
     String text = left.length() > room ? left.substring(0, room) : left;
@@ -61,7 +63,12 @@ public final class ReceiptRenderer {
   public static byte[] render(Receipt receipt, int width) {
     String rule = "-".repeat(width);
     EscPosBuilder p = new EscPosBuilder();
-    p.align(EscPosBuilder.Align.CENTER).bold(true).large(true).line(receipt.shopName()).large(false).bold(false);
+    p.align(EscPosBuilder.Align.CENTER)
+        .bold(true)
+        .large(true)
+        .line(receipt.shopName())
+        .large(false)
+        .bold(false);
     receipt.shopDetails().forEach(p::line);
     p.align(EscPosBuilder.Align.LEFT).line(rule);
     p.line(columns("Receipt " + receipt.receiptNumber(), TIME.format(receipt.time()), width));

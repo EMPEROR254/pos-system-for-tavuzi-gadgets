@@ -14,6 +14,10 @@
   --border: #e2e8f0;
   --brand: #0f766e;
   --brand-foreground: #ffffff;
+  --brand-soft: #ccfbf1;
+  --danger: #b91c1c;
+  --danger-soft: #fee2e2;
+  --success: #15803d;
 }
 
 .dark {
@@ -24,6 +28,10 @@
   --border: #1f2937;
   --brand: #2dd4bf;
   --brand-foreground: #042f2e;
+  --brand-soft: #134e4a;
+  --danger: #f87171;
+  --danger-soft: #450a0a;
+  --success: #4ade80;
 }
 
 @theme inline {
@@ -34,6 +42,10 @@
   --color-border: var(--border);
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
+  --color-brand-soft: var(--brand-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-success: var(--success);
 }
 
 /* Subtle motion: animate-fade-in, animate-slide-up (150-250 ms). */
@@ -64,6 +76,10 @@
 @layer base {
   body {
     @apply bg-background text-foreground antialiased transition-colors duration-200;
+  }
+  /* Visible keyboard focus everywhere (mouse clicks don't show it). */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-brand;
   }
   /* Respect "reduce motion" in the phone or computer settings. */
   @media (prefers-reduced-motion: reduce) {

@@ -6,9 +6,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * What each role may do. Check on the server for every protected action (e.g.
- * in the service, or with @PreAuthorize) - hiding a button is not security.
- * Shared module from BS Codes.
+ * What each role may do. Check on the server for every protected action (e.g. in the service, or
+ * with @PreAuthorize) - hiding a button is not security. Shared module from BS Codes.
  */
 public final class RolePermissions {
 
@@ -16,24 +15,30 @@ public final class RolePermissions {
 
   static {
     DEFAULTS.put(Role.OWNER, EnumSet.allOf(Permission.class));
+    // Spec: "No exchanges unless supervised by me" (the owner) - so managers
+    // get no REFUND; returns and exchanges stay with the owner.
     DEFAULTS.put(
         Role.MANAGER,
         EnumSet.of(
             Permission.MAKE_SALE,
             Permission.GIVE_DISCOUNT,
-            Permission.REFUND,
             Permission.VIEW_REPORTS,
             Permission.MANAGE_PRODUCTS,
             Permission.MANAGE_STOCK));
+    // Spec: some staff are blocked from discounts, refunds and reports.
     DEFAULTS.put(Role.CASHIER, EnumSet.of(Permission.MAKE_SALE));
-    DEFAULTS.put(Role.STOCK_CLERK, EnumSet.of(Permission.MANAGE_STOCK));
-    DEFAULTS.put(Role.ACCOUNTANT, EnumSet.of(Permission.VIEW_REPORTS));
   }
 
   private RolePermissions() {}
 
   public static boolean can(Role role, Permission permission) {
     return DEFAULTS.getOrDefault(role, Set.of()).contains(permission);
+  }
+
+  /** Everything the role may do (used for Spring Security authorities and the web app). */
+  public static Set<Permission> of(Role role) {
+    Set<Permission> permissions = DEFAULTS.get(role);
+    return permissions == null ? Set.of() : EnumSet.copyOf(permissions);
   }
 
   /** Throws ForbiddenException unless the role has the permission. */

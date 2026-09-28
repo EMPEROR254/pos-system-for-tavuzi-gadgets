@@ -13,7 +13,11 @@ export function ThemeToggle() {
   useEffect(() => followSystemTheme(), [])
 
   return (
-    <div role="radiogroup" aria-label="Theme" className="inline-flex rounded-full border border-border bg-card p-0.5 text-xs">
+    <div
+      role="radiogroup"
+      aria-label="Theme"
+      className="inline-flex rounded-full border border-border bg-card p-0.5 text-xs"
+    >
       {OPTIONS.map((option) => (
         <button
           key={option.value}

@@ -3,8 +3,8 @@ package ke.bscodes.possystemfortavuzigadgetsbackend.mpesa;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * M-Pesa Daraja settings, read from application.yml under "mpesa" (values come
- * from environment variables - never commit real keys). Shared module from BS Codes.
+ * M-Pesa Daraja settings, read from application.yml under "mpesa" (values come from environment
+ * variables - never commit real keys). Shared module from BS Codes.
  *
  * <pre>
  * mpesa:

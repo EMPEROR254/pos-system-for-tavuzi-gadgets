@@ -29,6 +29,18 @@ class AuthTest {
   }
 
   @Test
+  void specRulesForTavuziRoles() {
+    // Cashiers only sell: no discounts, refunds or reports.
+    assertThat(RolePermissions.of(Role.CASHIER)).containsExactly(Permission.MAKE_SALE);
+    // Returns/exchanges only with the owner; managers run the shop but not staff accounts.
+    assertThat(RolePermissions.can(Role.MANAGER, Permission.REFUND)).isFalse();
+    assertThat(RolePermissions.can(Role.MANAGER, Permission.GIVE_DISCOUNT)).isTrue();
+    assertThat(RolePermissions.can(Role.MANAGER, Permission.VIEW_REPORTS)).isTrue();
+    assertThat(RolePermissions.can(Role.MANAGER, Permission.MANAGE_USERS)).isFalse();
+    assertThat(RolePermissions.of(Role.OWNER)).containsExactlyInAnyOrder(Permission.values());
+  }
+
+  @Test
   void tokensRoundTripAndRejectTampering() {
     JwtTokens tokens = new JwtTokens(SECRET);
     String token = tokens.issue("user-1", Role.MANAGER, Duration.ofMinutes(15), now);
@@ -38,7 +50,8 @@ class AuthTest {
 
     assertThatThrownBy(() -> tokens.verify(token, now.plusSeconds(901)))
         .hasMessageContaining("expired");
-    assertThatThrownBy(() -> new JwtTokens("another-secret-that-is-32-chars-long").verify(token, now))
+    assertThatThrownBy(
+            () -> new JwtTokens("another-secret-that-is-32-chars-long").verify(token, now))
         .hasMessageContaining("bad signature");
     assertThatThrownBy(() -> new JwtTokens("short")).isInstanceOf(IllegalArgumentException.class);
   }

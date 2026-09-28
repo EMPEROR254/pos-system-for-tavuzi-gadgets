@@ -1,6 +1,19 @@
 spring:
   application:
     name: 'pos-system-for-tavuzi-gadgets-backend'
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/${DB_NAME:app}}
+    username: ${SPRING_DATASOURCE_USERNAME:${DB_USER:app}}
+    password: ${SPRING_DATASOURCE_PASSWORD:${DB_PASSWORD:}}
+  jpa:
+    # The schema only changes through Flyway migrations (db/migration).
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate.jdbc.time_zone: UTC
+  flyway:
+    enabled: true
 server:
   port: 8080
   # Smaller responses = faster screens on slow connections.
@@ -12,3 +25,33 @@ management:
     web:
       exposure:
         include: health
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+app:
+  auth:
+    jwt-secret: ${JWT_SECRET}
+    access-token-minutes: 15
+    refresh-token-days: 7
+    # The refresh token is an httpOnly cookie. Set COOKIE_SECURE=true when the
+    # app is served over HTTPS; on a plain-HTTP shop network it must stay false.
+    cookie-secure: ${COOKIE_SECURE:false}
+    # After this many wrong passwords the account is locked for lock-minutes.
+    max-failed-logins: 5
+    lock-minutes: 15
+  # First start only: creates the owner account when there are no users yet.
+  bootstrap-owner:
+    username: ${OWNER_USERNAME:}
+    password: ${OWNER_PASSWORD:}
+    full-name: ${OWNER_FULL_NAME:Owner}
+
+mpesa:
+  environment: ${MPESA_ENVIRONMENT:sandbox}
+  consumer-key: ${MPESA_CONSUMER_KEY:}
+  consumer-secret: ${MPESA_CONSUMER_SECRET:}
+  shortcode: ${MPESA_SHORTCODE:}
+  passkey: ${MPESA_PASSKEY:}
+  callback-url: ${MPESA_CALLBACK_URL:}

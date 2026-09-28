@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import java.math.BigDecimal;
 
 /**
- * The result Safaricom POSTs to the callback URL. The same CheckoutRequestID
- * can arrive more than once - record payments idempotently.
+ * The result Safaricom POSTs to the callback URL. The same CheckoutRequestID can arrive more than
+ * once - record payments idempotently.
  */
 public record StkCallback(
     String merchantRequestId,

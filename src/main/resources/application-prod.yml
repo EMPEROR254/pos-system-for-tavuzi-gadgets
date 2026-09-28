@@ -1,0 +1,8 @@
+# Production (the shop computer). API docs stay off; secrets come from .env.
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+server:
+  forward-headers-strategy: framework

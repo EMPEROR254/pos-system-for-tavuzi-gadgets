@@ -1,14 +1,74 @@
-// The first screen. Each screen of the system is a file in src/pages.
-import { formatKes } from '../utils/format'
+// The first screen after sign-in: a greeting and what this person may do.
+// Later milestones add the sale screen, stock and reports shortcuts here.
+import { Link } from 'react-router'
+import { useSession } from '../services/session'
+import { can, roleLabel, type Permission } from '../utils/permissions'
 
-export function HomePage() {
+const ACCESS: { permission: Permission; label: string }[] = [
+  { permission: 'MAKE_SALE', label: 'Make sales' },
+  { permission: 'GIVE_DISCOUNT', label: 'Give discounts' },
+  { permission: 'REFUND', label: 'Returns and exchanges' },
+  { permission: 'VIEW_REPORTS', label: 'See reports' },
+  { permission: 'MANAGE_PRODUCTS', label: 'Manage products and prices' },
+  { permission: 'MANAGE_STOCK', label: 'Manage stock' },
+  { permission: 'MANAGE_USERS', label: 'Manage staff accounts' },
+  { permission: 'MANAGE_SETTINGS', label: 'Change shop settings' },
+]
+
+function greeting(): string {
+  const hour = Number(
+    new Intl.DateTimeFormat('en-KE', { hour: 'numeric', hour12: false, timeZone: 'Africa/Nairobi' }).format(new Date()),
+  )
+  return hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
+}
+
+export default function HomePage() {
+  const user = useSession((s) => s.user)
+  if (!user) return null
+  const firstName = user.fullName.split(' ')[0]
+
   return (
-    <section className="animate-slide-up rounded-2xl border border-border bg-card p-8 shadow-sm">
-      <p className="text-sm font-medium text-brand">Welcome</p>
-      <h2 className="mt-1 text-xl font-semibold">Your system is ready to build.</h2>
-      <p className="mt-2 text-muted">
-        Example amount: <span className="tabular-nums">{formatKes(1250)}</span>
-      </p>
-    </section>
+    <div className="animate-fade-in space-y-6">
+      <section className="rounded-2xl border border-border bg-card p-6 shadow-sm sm:p-8">
+        <p className="text-sm font-medium text-brand">{roleLabel(user.role)}</p>
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight">
+          {greeting()}, {firstName}
+        </h1>
+        <p className="mt-2 text-muted">Welcome to the Tavuzi Gadgets shop system.</p>
+      </section>
+
+      <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <h2 className="font-semibold">Your access</h2>
+        <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+          {ACCESS.map(({ permission, label }) => {
+            const allowed = can(user, permission)
+            return (
+              <li key={permission} className="flex items-center gap-3 text-sm">
+                <span
+                  aria-hidden
+                  className={`flex size-6 items-center justify-center rounded-full text-xs font-bold ${
+                    allowed ? 'bg-brand-soft text-success' : 'bg-background text-muted'
+                  }`}
+                >
+                  {allowed ? '✓' : '–'}
+                </span>
+                <span className={allowed ? '' : 'text-muted line-through'}>
+                  {label}
+                  <span className="sr-only">{allowed ? ' (allowed)' : ' (not allowed)'}</span>
+                </span>
+              </li>
+            )
+          })}
+        </ul>
+        {can(user, 'MANAGE_USERS') && (
+          <Link
+            to="/admin/users"
+            className="mt-6 inline-flex min-h-11 items-center rounded-xl bg-brand px-4 text-sm font-medium text-brand-foreground shadow-sm hover:opacity-90"
+          >
+            Manage staff
+          </Link>
+        )}
+      </section>
+    </div>
   )
 }

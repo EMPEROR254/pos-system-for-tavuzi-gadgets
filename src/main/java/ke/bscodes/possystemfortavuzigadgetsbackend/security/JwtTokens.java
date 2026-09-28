@@ -13,8 +13,8 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 /**
- * Signed access tokens (JWT, HS256) with the JDK and Jackson - small enough to
- * read. Keep access tokens short-lived (15 min). Shared module from BS Codes.
+ * Signed access tokens (JWT, HS256) with the JDK and Jackson - small enough to read. Keep access
+ * tokens short-lived (15 min). Shared module from BS Codes.
  */
 public final class JwtTokens {
 
@@ -36,7 +36,8 @@ public final class JwtTokens {
     try {
       String header = encode(Map.of("alg", "HS256", "typ", "JWT"));
       String payload =
-          encode(Map.of("sub", subject, "role", role.name(), "exp", now.plus(ttl).getEpochSecond()));
+          encode(
+              Map.of("sub", subject, "role", role.name(), "exp", now.plus(ttl).getEpochSecond()));
       return header + "." + payload + "." + sign(header + "." + payload);
     } catch (Exception e) {
       throw new IllegalStateException("Could not create token", e);
@@ -62,7 +63,8 @@ public final class JwtTokens {
       if (!expiresAt.isAfter(now)) {
         throw new InvalidTokenException("expired");
       }
-      return new Claims(payload.path("sub").asText(), Role.valueOf(payload.path("role").asText()), expiresAt);
+      return new Claims(
+          payload.path("sub").asText(), Role.valueOf(payload.path("role").asText()), expiresAt);
     } catch (InvalidTokenException e) {
       throw e;
     } catch (Exception e) {
