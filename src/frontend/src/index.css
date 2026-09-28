@@ -1,0 +1,77 @@
+/* Tailwind CSS with theme tokens: change the brand colour and the light/dark
+   palettes here, and every screen follows. Use the tokens in classes, e.g.
+   bg-background text-foreground bg-card border-border text-muted bg-brand. */
+@import 'tailwindcss';
+
+/* Dark mode follows the "dark" class on <html> (set by src/utils/theme.ts). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --card: #ffffff;
+  --muted: #64748b;
+  --border: #e2e8f0;
+  --brand: #0f766e;
+  --brand-foreground: #ffffff;
+}
+
+.dark {
+  --background: #0b1120;
+  --foreground: #e2e8f0;
+  --card: #111827;
+  --muted: #94a3b8;
+  --border: #1f2937;
+  --brand: #2dd4bf;
+  --brand-foreground: #042f2e;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+}
+
+/* Subtle motion: animate-fade-in, animate-slide-up (150-250 ms). */
+@theme {
+  --animate-fade-in: fade-in 200ms ease-out both;
+  --animate-slide-up: slide-up 250ms ease-out both;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+@layer base {
+  body {
+    @apply bg-background text-foreground antialiased transition-colors duration-200;
+  }
+  /* Respect "reduce motion" in the phone or computer settings. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
