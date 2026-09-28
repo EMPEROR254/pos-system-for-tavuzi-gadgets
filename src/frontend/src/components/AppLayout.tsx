@@ -9,9 +9,13 @@ import { ThemeToggle } from './ThemeToggle'
 
 type NavItem = { to: string; label: string; permission?: Permission }
 
-// Later milestones add Sell, Stock, Customers and Reports here.
+// Later milestones add Stock, Customers and Reports here.
 const NAV: NavItem[] = [
   { to: '/', label: 'Home' },
+  { to: '/sell', label: 'Sell', permission: 'MAKE_SALE' },
+  { to: '/sales', label: 'Sales', permission: 'MAKE_SALE' },
+  { to: '/warranty', label: 'Warranty', permission: 'MAKE_SALE' },
+  { to: '/admin/products', label: 'Products', permission: 'MANAGE_PRODUCTS' },
   { to: '/admin/users', label: 'Staff', permission: 'MANAGE_USERS' },
   { to: '/account', label: 'My account' },
 ]
@@ -28,7 +32,7 @@ export function AppLayout() {
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 z-30 border-b border-border bg-background/85 backdrop-blur">
+      <header className="sticky top-0 z-30 border-b print:hidden border-border bg-background/85 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2 sm:px-6">
           <button
             type="button"
@@ -91,7 +95,7 @@ export function AppLayout() {
           </nav>
         )}
       </header>
-      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
+      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 print:p-0">
         <Outlet />
       </main>
     </div>

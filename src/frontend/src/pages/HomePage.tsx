@@ -60,10 +60,18 @@ export default function HomePage() {
             )
           })}
         </ul>
+        {can(user, 'MAKE_SALE') && (
+          <Link
+            to="/sell"
+            className="mt-6 mr-2 inline-flex min-h-11 items-center rounded-xl bg-brand px-4 text-sm font-medium text-brand-foreground shadow-sm hover:opacity-90"
+          >
+            Start selling
+          </Link>
+        )}
         {can(user, 'MANAGE_USERS') && (
           <Link
             to="/admin/users"
-            className="mt-6 inline-flex min-h-11 items-center rounded-xl bg-brand px-4 text-sm font-medium text-brand-foreground shadow-sm hover:opacity-90"
+            className="mt-6 inline-flex min-h-11 items-center rounded-xl border border-border px-4 text-sm font-medium hover:bg-background"
           >
             Manage staff
           </Link>

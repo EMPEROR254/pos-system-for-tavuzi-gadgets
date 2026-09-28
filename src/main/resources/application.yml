@@ -47,6 +47,26 @@ app:
     username: ${OWNER_USERNAME:}
     password: ${OWNER_PASSWORD:}
     full-name: ${OWNER_FULL_NAME:Owner}
+  # VAT: prices are VAT-inclusive; the standard rate applies to STANDARD products.
+  tax:
+    vat-rate-percent: ${VAT_RATE_PERCENT:16}
+  # Printed on every receipt (spec: till/paybill numbers and the return policy).
+  shop:
+    name: ${SHOP_NAME:TAVUZI GADGETS}
+    location: ${SHOP_LOCATION:Resma Plaza, Room G-13, next to Oginga Odinga St, Nakuru}
+    phone: ${SHOP_PHONE:}
+    kra-pin: ${SHOP_KRA_PIN:}
+    till-number: ${SHOP_TILL_NUMBER:}
+    paybill-number: ${SHOP_PAYBILL_NUMBER:}
+    paybill-account: ${SHOP_PAYBILL_ACCOUNT:}
+    return-policy: ${SHOP_RETURN_POLICY:No returns or exchanges without the owner's approval. Keep this receipt for warranty claims.}
+    footer:
+      - Thank you for shopping with us!
+  # Optional network receipt printer (ESC/POS, raw port 9100). Empty = print from the browser.
+  printer:
+    host: ${PRINTER_HOST:}
+    port: ${PRINTER_PORT:9100}
+    width: ${PRINTER_WIDTH:48}
 
 mpesa:
   environment: ${MPESA_ENVIRONMENT:sandbox}

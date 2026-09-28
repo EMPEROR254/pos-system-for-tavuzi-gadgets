@@ -17,7 +17,7 @@ export function OfflineBanner() {
 
   if (online) return null
   return (
-    <div role="alert" className="bg-danger px-4 py-2 text-center text-sm font-medium text-white">
+    <div role="alert" className="bg-danger px-4 py-2 print:hidden text-center text-sm font-medium text-white">
       No connection to the network. Changes can't be saved until it is back.
     </div>
   )

@@ -81,6 +81,15 @@
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-brand;
   }
+  /* Receipts print on white with small margins (thermal or A4 printers). */
+  @media print {
+    @page {
+      margin: 4mm;
+    }
+    body {
+      background: white;
+    }
+  }
   /* Respect "reduce motion" in the phone or computer settings. */
   @media (prefers-reduced-motion: reduce) {
     *,

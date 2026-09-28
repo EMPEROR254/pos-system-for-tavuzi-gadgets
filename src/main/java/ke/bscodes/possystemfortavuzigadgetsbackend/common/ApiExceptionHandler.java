@@ -5,6 +5,7 @@ import java.util.Map;
 import ke.bscodes.possystemfortavuzigadgetsbackend.security.RolePermissions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -34,6 +35,15 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
   @ExceptionHandler({AccessDeniedException.class, RolePermissions.ForbiddenException.class})
   ProblemDetail handleForbidden(RuntimeException e) {
     return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "Your role may not do this.");
+  }
+
+  /** Two tills saving the same thing at the same moment (e.g. one M-Pesa code twice). */
+  @ExceptionHandler(DataIntegrityViolationException.class)
+  ProblemDetail handleConflict(DataIntegrityViolationException e) {
+    log.warn("Conflicting save: {}", e.getMostSpecificCause().getMessage());
+    return ProblemDetail.forStatusAndDetail(
+        HttpStatus.CONFLICT,
+        "This was just changed or used elsewhere. Please check and try again.");
   }
 
   @ExceptionHandler(Exception.class)
