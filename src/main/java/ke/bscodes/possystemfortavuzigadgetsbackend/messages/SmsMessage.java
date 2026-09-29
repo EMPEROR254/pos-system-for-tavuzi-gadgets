@@ -8,6 +8,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import java.util.Set;
 
 /** One SMS in the outbox: queued, then sent (or failed after a few tries). */
 @Entity
@@ -50,6 +51,15 @@ public class SmsMessage {
   private Instant createdAt;
   private Instant sentAt;
 
+  /** Not before this time (scheduled promotions, quiet hours); null = straight away. */
+  private Instant sendAfter;
+
+  /** What the network reported (e.g. Success, Failed, Rejected); null until it reports. */
+  private String deliveryStatus;
+
+  private String failureReason;
+  private Instant deliveredAt;
+
   protected SmsMessage() {}
 
   public SmsMessage(
@@ -67,6 +77,43 @@ public class SmsMessage {
     this.saleId = saleId;
     this.campaignId = campaignId;
     this.createdAt = now;
+  }
+
+  public void setSendAfter(Instant sendAfter) {
+    this.sendAfter = sendAfter;
+  }
+
+  /** The network's delivery report. "Success" means it reached the phone. */
+  public void recordDelivery(String status, String reason, Instant now) {
+    this.deliveryStatus = cut(status, 30);
+    this.failureReason = reason == null || reason.isBlank() ? null : cut(reason, 100);
+    if ("Success".equalsIgnoreCase(status)) {
+      this.deliveredAt = now;
+    }
+  }
+
+  /** Final delivery reports that mean the SMS never reached the phone. */
+  static final Set<String> UNDELIVERED =
+      Set.of("Failed", "Rejected", "Expired", "AbsentSubscriber");
+
+  /** Failed to send, or sent but the network could not deliver it. */
+  public boolean canResend() {
+    return status == Status.FAILED
+        || (status == Status.SENT && UNDELIVERED.contains(deliveryStatus));
+  }
+
+  private static String cut(String s, int max) {
+    return s.length() <= max ? s : s.substring(0, max);
+  }
+
+  /** Try a failed message again from the start. */
+  public void resend() {
+    status = Status.QUEUED;
+    attempts = 0;
+    error = null;
+    deliveryStatus = null;
+    failureReason = null;
+    sendAfter = null;
   }
 
   /** Records a send attempt; a failure stays queued until MAX_ATTEMPTS, then FAILED. */
@@ -96,6 +143,18 @@ public class SmsMessage {
 
   public String getBody() {
     return body;
+  }
+
+  public Kind getKind() {
+    return kind;
+  }
+
+  public String getProviderMessageId() {
+    return providerMessageId;
+  }
+
+  public String getDeliveryStatus() {
+    return deliveryStatus;
   }
 
   public Status getStatus() {

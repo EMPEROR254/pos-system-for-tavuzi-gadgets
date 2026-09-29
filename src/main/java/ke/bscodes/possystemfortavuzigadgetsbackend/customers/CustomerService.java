@@ -23,11 +23,34 @@ import org.springframework.transaction.annotation.Transactional;
 public class CustomerService {
 
   private final CustomerRepository customers;
+  private final SmsOptOutRepository optOuts;
   private final Clock clock;
 
-  public CustomerService(CustomerRepository customers, Clock clock) {
+  public CustomerService(CustomerRepository customers, SmsOptOutRepository optOuts, Clock clock) {
     this.customers = customers;
+    this.optOuts = optOuts;
     this.clock = clock;
+  }
+
+  /**
+   * The phone asked for no more promotions (replied STOP, or via the network). Works for numbers
+   * that are not customers too. Returns true if it was not on the list yet.
+   */
+  @Transactional
+  public boolean optOut(String phone, String source) {
+    Instant now = clock.instant();
+    customers.findByPhone(phone).ifPresent(c -> c.setMarketingOptIn(false, now));
+    if (optOuts.existsById(phone)) {
+      return false;
+    }
+    optOuts.save(new SmsOptOut(phone, source, now));
+    return true;
+  }
+
+  /** The customer agreed (again) to promotions, e.g. at the till: lift any earlier opt-out. */
+  private void optIn(Customer c, Instant now) {
+    c.setMarketingOptIn(true, now);
+    optOuts.deleteById(c.getPhone());
   }
 
   /** "0712 345 678" → "254712345678"; a clear message when it isn't a Kenyan mobile number. */
@@ -64,7 +87,7 @@ public class CustomerService {
       return null;
     }
     if (optIn && !customer.isMarketingOptIn()) {
-      customer.setMarketingOptIn(true, now);
+      optIn(customer, now);
     }
     return customer;
   }
@@ -118,9 +141,13 @@ public class CustomerService {
     return get(id);
   }
 
-  private static void apply(Customer c, CustomerRequest r, String phone, Instant now) {
+  private void apply(Customer c, CustomerRequest r, String phone, Instant now) {
     c.update(r.name().trim(), phone, blankToNull(r.email()), blankToNull(r.notes()), now);
-    c.setMarketingOptIn(r.marketingOptIn(), now);
+    if (r.marketingOptIn() && !c.isMarketingOptIn()) {
+      optIn(c, now);
+    } else {
+      c.setMarketingOptIn(r.marketingOptIn(), now);
+    }
   }
 
   private static String namePattern(String q) {

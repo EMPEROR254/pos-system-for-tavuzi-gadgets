@@ -22,6 +22,9 @@ public class SmsCampaign {
   private Long createdBy;
   private Instant createdAt;
 
+  /** When the promotion was scheduled to go (null = straight away). */
+  private Instant sendAt;
+
   protected SmsCampaign() {}
 
   public SmsCampaign(String message, String audience, int recipients, long createdBy, Instant now) {
@@ -30,6 +33,10 @@ public class SmsCampaign {
     this.recipients = recipients;
     this.createdBy = createdBy;
     this.createdAt = now;
+  }
+
+  public void setSendAt(Instant sendAt) {
+    this.sendAt = sendAt;
   }
 
   public Long getId() {

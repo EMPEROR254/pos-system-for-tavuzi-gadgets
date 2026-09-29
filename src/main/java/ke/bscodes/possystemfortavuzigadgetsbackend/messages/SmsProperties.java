@@ -1,5 +1,6 @@
 package ke.bscodes.possystemfortavuzigadgetsbackend.messages;
 
+import java.time.LocalTime;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
@@ -14,7 +15,24 @@ public record SmsProperties(
     String senderId,
     boolean sandbox,
     String promoFooter,
-    boolean dispatchEnabled) {
+    boolean dispatchEnabled,
+    String callbackToken,
+    LocalTime quietStart,
+    LocalTime quietEnd) {
+
+  public SmsProperties {
+    quietStart = quietStart == null ? LocalTime.of(20, 0) : quietStart;
+    quietEnd = quietEnd == null ? LocalTime.of(8, 0) : quietEnd;
+  }
+
+  public QuietHours quietHours() {
+    return new QuietHours(quietStart, quietEnd);
+  }
+
+  /** Delivery reports and replies are only accepted when a callback token is set. */
+  public boolean callbacksEnabled() {
+    return callbackToken != null && callbackToken.length() >= 16;
+  }
 
   public boolean live() {
     return apiKey != null && !apiKey.isBlank() && username != null && !username.isBlank();

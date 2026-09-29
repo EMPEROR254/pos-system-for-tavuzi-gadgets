@@ -1,6 +1,7 @@
 package ke.bscodes.possystemfortavuzigadgetsbackend.messages;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -57,6 +58,26 @@ public class AfricasTalkingSmsSender implements SmsSender {
     } catch (RestClientException e) {
       log.warn("SMS to {} failed: {}", LoggingSmsSender.mask(phone), e.getMessage());
       return Result.failed("Could not reach the SMS provider");
+    }
+  }
+
+  /** GET /version1/user: the account balance, so the owner can top up in time. */
+  @Override
+  public Optional<String> balance() {
+    try {
+      JsonNode body =
+          http.get()
+              .uri(
+                  uri ->
+                      uri.path("/version1/user").queryParam("username", props.username()).build())
+              .header("apiKey", props.apiKey())
+              .accept(MediaType.APPLICATION_JSON)
+              .retrieve()
+              .body(JsonNode.class);
+      return Optional.ofNullable(body).map(b -> b.path("UserData").path("balance").asText(null));
+    } catch (RestClientException e) {
+      log.warn("Could not read the SMS balance: {}", e.getMessage());
+      return Optional.empty();
     }
   }
 }

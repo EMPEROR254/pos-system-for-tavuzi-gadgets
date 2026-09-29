@@ -70,7 +70,8 @@ public class SecurityConfig {
                         "/api/auth/refresh",
                         "/api/auth/logout",
                         "/api/status",
-                        "/api/mpesa/callback")
+                        "/api/mpesa/callback",
+                        "/api/sms/callbacks/**")
                     .permitAll()
                     .requestMatchers("/api/**")
                     .authenticated()

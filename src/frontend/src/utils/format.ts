@@ -25,3 +25,11 @@ export function formatDateTime(iso: string): string {
 export function todayInNairobi(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Nairobi' }).format(new Date())
 }
+
+/**
+ * A date-time picker value ("2026-09-29T14:00") read as Nairobi time → ISO UTC.
+ * Kenya is always UTC+3 (no daylight saving), so a fixed offset is safe.
+ */
+export function nairobiInputToIso(value: string): string {
+  return new Date(`${value}:00+03:00`).toISOString()
+}

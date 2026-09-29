@@ -80,6 +80,12 @@ app:
     promo-footer: ${SMS_PROMO_FOOTER:Reply STOP to opt out.}
     dispatch-enabled: ${SMS_DISPATCH_ENABLED:true}
     dispatch-interval-ms: 10000
+    # Secret part of the callback URLs given to Africa's Talking (delivery reports, replies,
+    # opt-outs); at least 16 characters. Empty = callbacks switched off.
+    callback-token: ${SMS_CALLBACK_TOKEN:}
+    # Promotions are not sent between these times (Nairobi); they wait for the morning.
+    quiet-start: ${SMS_QUIET_START:20:00}
+    quiet-end: ${SMS_QUIET_END:08:00}
   # KRA eTIMS (OSCU). OFF keeps invoices queued until the shop's device is registered with KRA.
   # cmc-key is a secret from KRA: keep it in .env.
   etims:

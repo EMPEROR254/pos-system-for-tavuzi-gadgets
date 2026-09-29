@@ -47,13 +47,14 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
   List<Customer> quickSearch(String pattern, String phone, Pageable pageable);
 
   /**
-   * Opted-in customers for a promotion. since: only those who bought on/after it (null = all);
-   * category: only those who bought a product in it (null = any).
+   * Opted-in customers for a promotion (never numbers on the opt-out list). since: only those who
+   * bought on/after it (null = all); category: only those who bought a product in it (null = any).
    */
   @Query(
       """
       select c from Customer c
       where c.marketingOptIn = true
+        and not exists (select 1 from SmsOptOut o where o.phone = c.phone)
         and (cast(:since as timestamp) is null or exists (
               select 1 from Sale s where s.customerId = c.id and s.createdAt >= :since))
         and (:category is null or exists (

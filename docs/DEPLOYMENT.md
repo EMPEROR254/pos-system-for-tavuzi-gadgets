@@ -15,6 +15,12 @@
    on the Hardware screen (see docs/HARDWARE.md for what to buy).
    SMS receipts and promotions need an Africa's Talking account: set `AT_USERNAME`,
    `AT_API_KEY` and (once approved) `AT_SENDER_ID`. Without a key, SMS are only logged.
+   Set `SMS_CALLBACK_TOKEN` to a long random string, then in the Africa's Talking
+   dashboard (SMS → Callback URLs) enter, with the site's public HTTPS address:
+   delivery reports `https://<site>/api/sms/callbacks/<token>/delivery`,
+   incoming messages `.../<token>/inbound` (needs a shortcode or two-way number,
+   so "Reply STOP" works) and bulk opt-out `.../<token>/opt-out`.
+   Promotions are held between `SMS_QUIET_START` and `SMS_QUIET_END` (Nairobi time).
    KRA eTIMS stays `OFF` (invoices are kept, not sent) until the shop's device is
    registered with KRA - see docs/ETIMS.md for the steps.
 4. `docker compose up -d --build`.

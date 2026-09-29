@@ -29,6 +29,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
       "app.bootstrap-owner.full-name=Test Owner",
       // Tests send queued SMS themselves (MessageService.queued()/sendOne()).
       "app.sms.dispatch-enabled=false",
+      "app.sms.callback-token=test-callback-token-123",
       "app.etims.dispatch-enabled=false"
     })
 public abstract class IntegrationTest {
@@ -46,6 +47,11 @@ public abstract class IntegrationTest {
 
     public void advance(Duration duration) {
       now = now.plus(duration);
+    }
+
+    /** Tests that set the time must put it back afterwards; the clock is shared. */
+    public void set(Instant instant) {
+      now = instant;
     }
 
     @Override
