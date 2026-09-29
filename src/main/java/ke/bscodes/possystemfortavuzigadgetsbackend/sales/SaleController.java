@@ -92,6 +92,13 @@ public class SaleController {
     return sales.get(me, id);
   }
 
+  /** Sends the SMS receipt (again) to the customer's phone. */
+  @PostMapping("/{id}/sms-receipt")
+  @ResponseStatus(HttpStatus.ACCEPTED)
+  public void smsReceipt(@AuthenticationPrincipal AuthUser me, @PathVariable long id) {
+    sales.smsReceipt(me, id);
+  }
+
   /** Needs the owner: signed in, or approving on the till with their password. */
   @PostMapping("/{id}/returns")
   @ResponseStatus(HttpStatus.CREATED)

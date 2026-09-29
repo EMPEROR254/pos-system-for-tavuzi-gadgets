@@ -15,7 +15,18 @@ export type Cart = {
   lines: CartLine[]
   customerName: string
   customerPhone: string
+  /** Set when an existing customer was picked (optional: carts saved before this still load). */
+  customerId?: number | null
+  /** The customer agreed to promotional SMS. */
+  marketingOptIn?: boolean
+  /** Send an SMS receipt (default on once there is a phone number). */
+  smsReceipt?: boolean
 }
+
+export type CustomerFields = Pick<
+  Cart,
+  'customerName' | 'customerPhone' | 'customerId' | 'marketingOptIn' | 'smsReceipt'
+>
 
 export type HeldSale = { id: string; label: string; heldAt: string; cart: Cart }
 
@@ -26,7 +37,7 @@ type CartState = {
   update: (key: string, changes: Partial<Pick<CartLine, 'quantity' | 'unitId' | 'discount' | 'serials'>>) => void
   remove: (key: string) => void
   setTier: (tier: PriceTier) => void
-  setCustomer: (name: string, phone: string) => void
+  setCustomer: (changes: Partial<CustomerFields>) => void
   clear: () => void
   hold: (label: string) => void
   resume: (id: string) => void
@@ -69,8 +80,7 @@ export const useCart = create<CartState>()(
         })),
       remove: (key) => set(({ cart }) => ({ cart: { ...cart, lines: cart.lines.filter((l) => l.key !== key) } })),
       setTier: (priceTier) => set(({ cart }) => ({ cart: { ...cart, priceTier } })),
-      setCustomer: (customerName, customerPhone) =>
-        set(({ cart }) => ({ cart: { ...cart, customerName, customerPhone } })),
+      setCustomer: (changes) => set(({ cart }) => ({ cart: { ...cart, ...changes } })),
       clear: () => set({ cart: emptyCart() }),
       hold: (label) => {
         const { cart, held } = get()

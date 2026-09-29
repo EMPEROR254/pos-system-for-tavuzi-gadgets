@@ -11,7 +11,10 @@
    staff under "Staff". Set `COOKIE_SECURE=true` only when the site runs on HTTPS.
    Receipts print the `SHOP_*` values (till and paybill numbers, KRA PIN, return
    policy); set `PRINTER_HOST` once a network thermal printer is installed,
-   otherwise staff print receipts from the browser.
+   otherwise staff print receipts from the browser. The printer can also be set
+   on the Hardware screen (see docs/HARDWARE.md for what to buy).
+   SMS receipts and promotions need an Africa's Talking account: set `AT_USERNAME`,
+   `AT_API_KEY` and (once approved) `AT_SENDER_ID`. Without a key, SMS are only logged.
 4. `docker compose up -d --build`.
 5. Put Nginx or Caddy in front for HTTPS (Caddy gets certificates automatically):
    `app.example.co.ke { reverse_proxy localhost:8080 }`.

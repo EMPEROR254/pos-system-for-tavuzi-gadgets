@@ -11,6 +11,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,6 +43,13 @@ public class Product {
   private int warrantyMonths;
   private BigDecimal costPrice;
   private boolean active = true;
+
+  /** In base units (e.g. pieces). Only StockService changes it, always with a movement. */
+  private int stockOnHand;
+
+  /** Low-stock alert when stock is at or below this (0 = no alert). */
+  private int reorderLevel;
+
   private Instant createdAt;
   private Instant updatedAt;
 
@@ -75,6 +83,37 @@ public class Product {
     this.costPrice = costPrice;
     this.active = active;
     this.updatedAt = now;
+  }
+
+  public void setReorderLevel(int reorderLevel) {
+    this.reorderLevel = reorderLevel;
+  }
+
+  /** Adds (or with a negative delta removes) base units; returns the new balance. */
+  public int changeStock(int delta) {
+    stockOnHand += delta;
+    return stockOnHand;
+  }
+
+  /**
+   * Stock received at a cost per base unit: the cost price becomes the weighted average of what is
+   * on the shelf and what came in, so profit reports stay fair when supplier prices change.
+   */
+  public void receiveAtCost(int baseUnits, BigDecimal costPerBaseUnit) {
+    int onShelf = Math.max(stockOnHand, 0);
+    if (onShelf == 0 || costPrice == null) {
+      costPrice = costPerBaseUnit.setScale(2, RoundingMode.HALF_UP);
+    } else {
+      costPrice =
+          costPrice
+              .multiply(BigDecimal.valueOf(onShelf))
+              .add(costPerBaseUnit.multiply(BigDecimal.valueOf(baseUnits)))
+              .divide(BigDecimal.valueOf(onShelf + baseUnits), 2, RoundingMode.HALF_UP);
+    }
+  }
+
+  public boolean isLowOnStock() {
+    return reorderLevel > 0 && stockOnHand <= reorderLevel;
   }
 
   public Optional<ProductUnit> unit(long unitId) {
@@ -115,6 +154,14 @@ public class Product {
 
   public boolean isActive() {
     return active;
+  }
+
+  public int getStockOnHand() {
+    return stockOnHand;
+  }
+
+  public int getReorderLevel() {
+    return reorderLevel;
   }
 
   public List<ProductUnit> getUnits() {

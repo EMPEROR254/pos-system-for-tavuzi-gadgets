@@ -2,6 +2,7 @@
 // barcode (the scanner types the code and presses Enter, which adds it at once).
 import { useQuery } from '@tanstack/react-query'
 import { useRef, useState, type KeyboardEvent } from 'react'
+import { CameraScanButton } from '../../components/CameraScanner'
 import { inputClass } from '../../components/Field'
 import { ApiError } from '../../services/api'
 import { lookupProducts, type SellableProduct } from '../../services/products'
@@ -30,10 +31,14 @@ export function ProductSearch({ tier, onAdd }: Props) {
     input.current?.focus()
   }
 
-  const onKeyDown = async (e: KeyboardEvent<HTMLInputElement>) => {
+  const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key !== 'Enter' || !text.trim()) return
     e.preventDefault()
-    const code = text.trim()
+    void addByCode(text.trim())
+  }
+
+  /** A scanned (USB scanner or camera) or typed code: add the product if exactly one matches. */
+  const addByCode = async (code: string) => {
     try {
       const found = await lookupProducts(code)
       if (found.length === 1) {
@@ -51,7 +56,7 @@ export function ProductSearch({ tier, onAdd }: Props) {
   const list = q.length >= 2 ? (results.data ?? []) : []
 
   return (
-    <div className="relative">
+    <div className="relative flex gap-2">
       <label htmlFor="till-search" className="sr-only">
         Search products or scan a barcode
       </label>
@@ -64,9 +69,10 @@ export function ProductSearch({ tier, onAdd }: Props) {
         placeholder="Search by name, or scan a barcode"
         value={text}
         onChange={(e) => setText(e.target.value)}
-        onKeyDown={(e) => void onKeyDown(e)}
+        onKeyDown={onKeyDown}
         className={`${inputClass} min-h-12 text-base`}
       />
+      <CameraScanButton onCode={(code) => void addByCode(code)} />
       {q.length >= 2 && (
         <div className="absolute inset-x-0 top-full z-20 mt-1 max-h-80 overflow-y-auto rounded-xl border border-border bg-card shadow-lg">
           {results.isFetching && list.length === 0 ? (
@@ -91,6 +97,10 @@ export function ProductSearch({ tier, onAdd }: Props) {
                       <span className="text-xs text-muted">
                         {p.units.map((u) => u.name).join(' · ')}
                         {p.serialType !== 'NONE' && ` · ${p.serialType === 'IMEI' ? 'IMEI' : 'Serial'} needed`}
+                        {' · '}
+                        <span className={p.stockOnHand <= 0 ? 'text-danger' : ''}>
+                          {p.stockOnHand <= 0 ? 'Out of stock' : `${p.stockOnHand} in stock`}
+                        </span>
                       </span>
                     </span>
                     <span className="text-sm font-medium tabular-nums">{formatKes(unitPrice(p.units[0], tier))}</span>

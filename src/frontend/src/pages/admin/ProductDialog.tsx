@@ -30,6 +30,7 @@ const schema = z.object({
   serialType: z.enum(['NONE', 'IMEI', 'SERIAL']),
   warrantyMonths: z.coerce.number().int('Whole months.').min(0).max(120, 'At most 120.'),
   costPrice: price,
+  reorderLevel: z.coerce.number().int('Whole number.').min(0, "Can't be negative."),
   active: z.boolean(),
   units: z
     .array(
@@ -60,6 +61,7 @@ function toForm(p: Product | null): FormValues {
         serialType: p.serialType,
         warrantyMonths: p.warrantyMonths,
         costPrice: p.costPrice,
+        reorderLevel: p.reorderLevel,
         active: p.active,
         units: p.units.map((u) => ({ ...u, barcode: u.barcode ?? '', wholesalePrice: u.wholesalePrice ?? '' })),
       }
@@ -71,6 +73,7 @@ function toForm(p: Product | null): FormValues {
         serialType: 'NONE',
         warrantyMonths: 0,
         costPrice: 0,
+        reorderLevel: 0,
         active: true,
         units: [{ id: null, name: 'Piece', factor: 1, barcode: '', retailPrice: '', wholesalePrice: '' }],
       }
@@ -168,6 +171,13 @@ export function ProductDialog({ product, open, categories, onClose }: Props) {
             hint="For profit reports. Not shown at the till."
             error={errors.costPrice?.message}
             {...register('costPrice')}
+          />
+          <TextField
+            label="Low-stock alert at (pieces)"
+            inputMode="numeric"
+            hint="Warn when stock falls to this. 0 = no alert."
+            error={errors.reorderLevel?.message}
+            {...register('reorderLevel')}
           />
         </div>
 

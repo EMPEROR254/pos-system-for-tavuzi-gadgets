@@ -1,6 +1,8 @@
 // One line in the till's cart: unit, quantity, discount, IMEIs/serials and
 // the line total. No animations here - this is the busiest screen.
+import { useQuery } from '@tanstack/react-query'
 import type { PriceTier } from '../../services/sales'
+import { serialsInStock } from '../../services/stock'
 import { formatKes } from '../../utils/format'
 import { lineAmounts, serialsNeeded, unitOf, unitPrice, type CartLine } from './cartMath'
 
@@ -18,6 +20,14 @@ export function CartLineRow({ line, tier, onChange, onRemove }: Props) {
   const unit = unitOf(line)
   const amounts = lineAmounts(line, tier)
   const needed = serialsNeeded(line)
+  // IMEIs/serials on the shelf for this product, offered as the cashier types.
+  const onShelf = useQuery({
+    queryKey: ['stock', 'serials', line.product.id],
+    queryFn: () => serialsInStock(line.product.id),
+    enabled: needed > 0,
+    staleTime: 30_000,
+  })
+  const listId = `serials-${line.key}`
   const name = line.product.name
 
   const setQuantity = (quantity: number) => {
@@ -107,6 +117,13 @@ export function CartLineRow({ line, tier, onChange, onRemove }: Props) {
       </div>
 
       {needed > 0 && (
+        <datalist id={listId}>
+          {(onShelf.data ?? []).map((serial) => (
+            <option key={serial} value={serial} />
+          ))}
+        </datalist>
+      )}
+      {needed > 0 && (
         <div className="grid gap-2 sm:grid-cols-2">
           {Array.from({ length: needed }, (_, i) => (
             <input
@@ -115,6 +132,7 @@ export function CartLineRow({ line, tier, onChange, onRemove }: Props) {
               placeholder={line.product.serialType === 'IMEI' ? `IMEI ${i + 1} (15 digits)` : `Serial number ${i + 1}`}
               inputMode={line.product.serialType === 'IMEI' ? 'numeric' : 'text'}
               autoComplete="off"
+              list={listId}
               value={line.serials[i] ?? ''}
               onChange={(e) => {
                 const serials = Array.from({ length: needed }, (_, j) => line.serials[j] ?? '')

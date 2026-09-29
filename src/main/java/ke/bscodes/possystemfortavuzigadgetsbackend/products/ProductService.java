@@ -48,7 +48,7 @@ public class ProductService {
   @Transactional(readOnly = true)
   public Page<ProductResponse> search(
       String query, String category, Boolean active, Pageable pageable) {
-    return load(query, category, active, pageable).map(ProductResponse::from);
+    return load(query, category, active, false, pageable).map(ProductResponse::from);
   }
 
   /** Till search: an exact barcode/SKU match wins; otherwise name matches, active only. */
@@ -64,7 +64,7 @@ public class ProductService {
           .map(p -> SellableProduct.from(p, vat.ratePercent(p.getVatCategory())))
           .toList();
     }
-    return load(q, null, true, PageRequest.of(0, TILL_RESULTS, Sort.by("name")))
+    return load(q, null, true, false, PageRequest.of(0, TILL_RESULTS, Sort.by("name")))
         .map(p -> SellableProduct.from(p, vat.ratePercent(p.getVatCategory())))
         .getContent();
   }
@@ -114,6 +114,7 @@ public class ProductService {
         money(r.costPrice()),
         r.active(),
         clock.instant());
+    product.setReorderLevel(r.reorderLevel() == null ? 0 : r.reorderLevel());
     syncUnits(product, r.units());
   }
 
@@ -169,14 +170,16 @@ public class ProductService {
     }
   }
 
-  private Page<Product> load(String query, String category, Boolean active, Pageable pageable) {
+  /** Products with their units, for other features (e.g. the stock list with lowOnly). */
+  public Page<Product> load(
+      String query, String category, Boolean active, boolean lowOnly, Pageable pageable) {
     String q = query == null ? "" : query.trim();
     String pattern =
         q.isEmpty()
             ? null
             : "%" + q.toLowerCase(Locale.ROOT).replace("%", "").replace("_", "\\_") + "%";
     Page<Long> ids =
-        products.searchIds(pattern, q.isEmpty() ? null : q, category, active, pageable);
+        products.searchIds(pattern, q.isEmpty() ? null : q, category, active, lowOnly, pageable);
     Map<Long, Product> byId =
         products.findWithUnits(ids.getContent()).stream()
             .collect(Collectors.toMap(Product::getId, Function.identity()));

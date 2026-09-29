@@ -38,8 +38,10 @@ public final class SaleDtos {
       @Size(max = 40, message = "At most 40 characters.") String reference) {}
 
   /**
-   * A finished cart from the till. clientRef is a random id made by the till: sending the same sale
-   * twice (double tap, retry after a network error) returns the first sale, not a second one.
+   * A finished cart from the till. The customer is customerId, or found/added by phone
+   * (marketingOptIn = they agreed to promotions); smsReceipt queues an SMS receipt. clientRef is a
+   * random id made by the till: sending the same sale twice (double tap, retry after a network
+   * error) returns the first sale, not a second one.
    */
   public record CheckoutRequest(
       @NotBlank(message = "Missing sale id.") @Size(max = 64) String clientRef,
@@ -48,7 +50,10 @@ public final class SaleDtos {
       @NotNull(message = "Add a payment.") @Valid List<PaymentRequest> payments,
       @Size(max = 100, message = "At most 100 characters.") String customerName,
       @Size(max = 20, message = "Too long for a phone number.") String customerPhone,
-      Approval approval) {}
+      Approval approval,
+      Long customerId,
+      boolean marketingOptIn,
+      boolean smsReceipt) {}
 
   public record SerialView(String serial, boolean returned) {}
 

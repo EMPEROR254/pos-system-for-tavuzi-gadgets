@@ -1,12 +1,10 @@
 package ke.bscodes.possystemfortavuzigadgetsbackend.receipts;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import ke.bscodes.possystemfortavuzigadgetsbackend.common.ApiException;
-import ke.bscodes.possystemfortavuzigadgetsbackend.receipt.NetworkPrinter;
+import ke.bscodes.possystemfortavuzigadgetsbackend.hardware.PrinterService;
 import ke.bscodes.possystemfortavuzigadgetsbackend.receipts.ReceiptView.VatLine;
 import ke.bscodes.possystemfortavuzigadgetsbackend.sales.SaleDtos.LineView;
 import ke.bscodes.possystemfortavuzigadgetsbackend.sales.SaleDtos.SaleView;
@@ -14,10 +12,9 @@ import ke.bscodes.possystemfortavuzigadgetsbackend.sales.SaleService;
 import ke.bscodes.possystemfortavuzigadgetsbackend.security.AuthUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-/** Builds receipts for a sale and sends them to the network printer when one is set up. */
+/** Builds receipts for a sale and sends them to the receipt printer when one is set up. */
 @Service
 public class ReceiptService {
 
@@ -25,9 +22,9 @@ public class ReceiptService {
 
   private final SaleService sales;
   private final ShopProperties shop;
-  private final PrinterProperties printer;
+  private final PrinterService printer;
 
-  public ReceiptService(SaleService sales, ShopProperties shop, PrinterProperties printer) {
+  public ReceiptService(SaleService sales, ShopProperties shop, PrinterService printer) {
     this.sales = sales;
     this.shop = shop;
     this.printer = printer;
@@ -37,20 +34,11 @@ public class ReceiptService {
     return build(sales.get(actor, saleId));
   }
 
+  /** Prints on the shop's receipt printer; opens the cash drawer when cash was taken. */
   public void print(AuthUser actor, long saleId) {
-    if (!printer.configured()) {
-      throw new ApiException(
-          HttpStatus.CONFLICT, "No receipt printer is set up. Use the browser's Print instead.");
-    }
-    byte[] bytes = EscPosReceipt.render(receipt(actor, saleId), printer.widthOrDefault());
-    try {
-      NetworkPrinter.print(printer.host(), printer.portOrDefault(), bytes);
-    } catch (IOException e) {
-      log.warn("Receipt printer {} did not answer: {}", printer.host(), e.getMessage());
-      throw new ApiException(
-          HttpStatus.SERVICE_UNAVAILABLE,
-          "The receipt printer did not answer. Check it is on and has paper.");
-    }
+    ReceiptView view = receipt(actor, saleId);
+    boolean cash = view.sale().payments().stream().anyMatch(p -> "CASH".equals(p.method()));
+    printer.print(EscPosReceipt.render(view, printer.current().width()), cash);
   }
 
   ReceiptView build(SaleView sale) {

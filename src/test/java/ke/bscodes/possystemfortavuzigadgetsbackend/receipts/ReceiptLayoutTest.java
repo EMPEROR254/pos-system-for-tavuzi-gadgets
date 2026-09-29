@@ -93,8 +93,7 @@ class ReceiptLayoutTest {
 
   @Test
   void printedReceiptShowsWhatTheSpecAsksFor() {
-    ReceiptView view =
-        new ReceiptService(null, shop, new PrinterProperties(null, null, null)).build(sale);
+    ReceiptView view = new ReceiptService(null, shop, null).build(sale);
     String text = new String(EscPosReceipt.render(view, 48), StandardCharsets.US_ASCII);
 
     assertThat(text)

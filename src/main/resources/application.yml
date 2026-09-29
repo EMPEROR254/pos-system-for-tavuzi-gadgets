@@ -16,6 +16,9 @@ spring:
     enabled: true
 server:
   port: 8080
+  # The web app manifest (install on the Android till) needs its proper type.
+  mime-mappings:
+    webmanifest: application/manifest+json
   # Smaller responses = faster screens on slow connections.
   compression:
     enabled: true
@@ -67,6 +70,16 @@ app:
     host: ${PRINTER_HOST:}
     port: ${PRINTER_PORT:9100}
     width: ${PRINTER_WIDTH:48}
+  # SMS (receipts and promotions) through Africa's Talking. Without AT_API_KEY, SMS are
+  # only written to the log. The API key is a secret: keep it in .env.
+  sms:
+    username: ${AT_USERNAME:}
+    api-key: ${AT_API_KEY:}
+    sender-id: ${AT_SENDER_ID:}
+    sandbox: ${AT_SANDBOX:false}
+    promo-footer: ${SMS_PROMO_FOOTER:Reply STOP to opt out.}
+    dispatch-enabled: ${SMS_DISPATCH_ENABLED:true}
+    dispatch-interval-ms: 10000
 
 mpesa:
   environment: ${MPESA_ENVIRONMENT:sandbox}

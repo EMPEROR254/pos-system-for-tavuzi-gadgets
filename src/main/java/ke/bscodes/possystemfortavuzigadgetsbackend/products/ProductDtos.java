@@ -47,6 +47,7 @@ public final class ProductDtos {
           @Digits(integer = 10, fraction = 2, message = "Up to 2 decimals.")
           BigDecimal costPrice,
       boolean active,
+      @Min(value = 0, message = "Can't be negative.") Integer reorderLevel,
       @NotEmpty(message = "Add at least one selling unit.") @Valid List<UnitRequest> units) {}
 
   public record UnitResponse(
@@ -79,6 +80,8 @@ public final class ProductDtos {
       int warrantyMonths,
       BigDecimal costPrice,
       boolean active,
+      int stockOnHand,
+      int reorderLevel,
       List<UnitResponse> units) {
 
     static ProductResponse from(Product p) {
@@ -92,6 +95,8 @@ public final class ProductDtos {
           p.getWarrantyMonths(),
           p.getCostPrice(),
           p.isActive(),
+          p.getStockOnHand(),
+          p.getReorderLevel(),
           p.getUnits().stream().map(UnitResponse::from).toList());
     }
   }
@@ -105,6 +110,7 @@ public final class ProductDtos {
       BigDecimal vatRate,
       SerialType serialType,
       int warrantyMonths,
+      int stockOnHand,
       List<UnitResponse> units) {
 
     static SellableProduct from(Product p, BigDecimal vatRate) {
@@ -116,6 +122,7 @@ public final class ProductDtos {
           vatRate,
           p.getSerialType(),
           p.getWarrantyMonths(),
+          p.getStockOnHand(),
           p.getUnits().stream().map(UnitResponse::from).toList());
     }
   }

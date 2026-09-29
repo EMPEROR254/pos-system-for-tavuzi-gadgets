@@ -12,10 +12,12 @@ export type Permission =
   | 'MANAGE_STOCK'
   | 'MANAGE_USERS'
   | 'MANAGE_SETTINGS'
+  | 'MANAGE_CUSTOMERS'
+  | 'SEND_PROMOTIONS'
 
 export const ROLES: { value: Role; label: string; description: string }[] = [
   { value: 'OWNER', label: 'Owner', description: 'Everything, including staff accounts and returns' },
-  { value: 'MANAGER', label: 'Manager', description: 'Sales, discounts, stock, products and reports' },
+  { value: 'MANAGER', label: 'Manager', description: 'Sales, discounts, stock, products, customers and reports' },
   { value: 'CASHIER', label: 'Cashier / front desk', description: 'Sales only - no discounts, refunds or reports' },
 ]
 

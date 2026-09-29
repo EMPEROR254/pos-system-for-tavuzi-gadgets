@@ -23,6 +23,8 @@ export type SellableProduct = {
   vatRate: number
   serialType: SerialType
   warrantyMonths: number
+  /** In base units (e.g. pieces). */
+  stockOnHand: number
   units: Unit[]
 }
 
@@ -36,6 +38,8 @@ export type Product = {
   warrantyMonths: number
   costPrice: number
   active: boolean
+  stockOnHand: number
+  reorderLevel: number
   units: Unit[]
 }
 
@@ -48,7 +52,7 @@ export type UnitInput = {
   wholesalePrice?: number | null
 }
 
-export type ProductInput = Omit<Product, 'id' | 'units'> & { units: UnitInput[] }
+export type ProductInput = Omit<Product, 'id' | 'units' | 'stockOnHand'> & { units: UnitInput[] }
 
 export type ProductFilters = {
   q?: string

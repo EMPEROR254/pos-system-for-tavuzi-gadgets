@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +18,7 @@ import ke.bscodes.possystemfortavuzigadgetsbackend.sales.SaleDtos.ReturnRequest;
 import ke.bscodes.possystemfortavuzigadgetsbackend.sales.SaleDtos.ReturnView;
 import ke.bscodes.possystemfortavuzigadgetsbackend.security.AuthUser;
 import ke.bscodes.possystemfortavuzigadgetsbackend.security.Permission;
+import ke.bscodes.possystemfortavuzigadgetsbackend.stock.StockService;
 import ke.bscodes.possystemfortavuzigadgetsbackend.warranty.Serials;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,13 +34,19 @@ public class ReturnService {
   private final SaleRepository sales;
   private final SaleReturnRepository returns;
   private final ApprovalService approvals;
+  private final StockService stock;
   private final Clock clock;
 
   public ReturnService(
-      SaleRepository sales, SaleReturnRepository returns, ApprovalService approvals, Clock clock) {
+      SaleRepository sales,
+      SaleReturnRepository returns,
+      ApprovalService approvals,
+      StockService stock,
+      Clock clock) {
     this.sales = sales;
     this.returns = returns;
     this.approvals = approvals;
+    this.stock = stock;
     this.clock = clock;
   }
 
@@ -54,6 +62,7 @@ public class ReturnService {
         new SaleReturn(
             sale, actor.id(), approver, request.reason().trim(), request.refundMethod(), now);
     Set<Long> seen = new HashSet<>();
+    List<StockService.Change> stockBack = new ArrayList<>();
     for (ReturnLineRequest r : request.lines()) {
       SaleLine line = lines.get(r.saleLineId());
       if (line == null || !seen.add(r.saleLineId())) {
@@ -63,7 +72,10 @@ public class ReturnService {
         throw ApiException.badRequest(
             line.getProductName() + ": only " + line.returnableQuantity() + " can be returned.");
       }
-      returnSerials(line, r, now);
+      List<String> backOnShelf = returnSerials(line, r, now);
+      stockBack.add(
+          new StockService.Change(
+              line.getProductId(), r.quantity() * line.getUnitFactor(), backOnShelf));
       int before = line.getReturnedQuantity();
       int after = before + r.quantity();
       saleReturn.addLine(
@@ -75,6 +87,7 @@ public class ReturnService {
               .subtract(share(line.getVatAmount(), before, line.getQuantity())));
       line.recordReturn(r.quantity());
     }
+    stock.recordReturn(stockBack, sale.getReceiptNo(), actor.id());
     sale.refreshReturnStatus();
     SaleReturn saved = returns.save(saleReturn);
     return new ReturnView(
@@ -95,12 +108,15 @@ public class ReturnService {
         .divide(BigDecimal.valueOf(total), 2, RoundingMode.HALF_UP);
   }
 
-  /** Marks which IMEIs/serials came back, so they can be sold again and lose their warranty. */
-  private void returnSerials(SaleLine line, ReturnLineRequest r, Instant now) {
+  /**
+   * Marks which IMEIs/serials came back (they lose their warranty) and returns them, so they go
+   * back on the shelf.
+   */
+  private List<String> returnSerials(SaleLine line, ReturnLineRequest r, Instant now) {
     List<SoldSerial> active =
         line.getSerials().stream().filter(s -> s.getReturnedAt() == null).toList();
     if (active.isEmpty()) {
-      return;
+      return List.of();
     }
     int needed = r.quantity() * line.getUnitFactor();
     List<SoldSerial> chosen;
@@ -118,5 +134,6 @@ public class ReturnService {
       }
     }
     chosen.forEach(s -> s.markReturned(now));
+    return chosen.stream().map(SoldSerial::getSerial).toList();
   }
 }

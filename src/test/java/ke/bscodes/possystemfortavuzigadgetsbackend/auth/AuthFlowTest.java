@@ -47,7 +47,7 @@ class AuthFlowTest extends IntegrationTest {
     mvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + token))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.username").value("owner"))
-        .andExpect(jsonPath("$.permissions.length()").value(8));
+        .andExpect(jsonPath("$.permissions.length()").value(10));
   }
 
   @Test

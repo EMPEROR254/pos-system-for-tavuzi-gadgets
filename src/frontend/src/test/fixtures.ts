@@ -9,6 +9,7 @@ export const phone: SellableProduct = {
   vatRate: 16,
   serialType: 'IMEI',
   warrantyMonths: 12,
+  stockOnHand: 3,
   units: [{ id: 11, name: 'Piece', factor: 1, barcode: null, retailPrice: 11600, wholesalePrice: 11000 }],
 }
 
@@ -20,6 +21,7 @@ export const cable: SellableProduct = {
   vatRate: 0,
   serialType: 'NONE',
   warrantyMonths: 0,
+  stockOnHand: 40,
   units: [
     { id: 21, name: 'Piece', factor: 1, barcode: 'CBL1', retailPrice: 200, wholesalePrice: null },
     { id: 22, name: 'Carton of 20', factor: 20, barcode: null, retailPrice: 3600, wholesalePrice: 3000 },

@@ -9,14 +9,18 @@ import { ThemeToggle } from './ThemeToggle'
 
 type NavItem = { to: string; label: string; permission?: Permission }
 
-// Later milestones add Stock, Customers and Reports here.
+// Later milestones add Reports here.
 const NAV: NavItem[] = [
   { to: '/', label: 'Home' },
   { to: '/sell', label: 'Sell', permission: 'MAKE_SALE' },
   { to: '/sales', label: 'Sales', permission: 'MAKE_SALE' },
   { to: '/warranty', label: 'Warranty', permission: 'MAKE_SALE' },
+  { to: '/stock', label: 'Stock', permission: 'MANAGE_STOCK' },
+  { to: '/customers', label: 'Customers', permission: 'MANAGE_CUSTOMERS' },
+  { to: '/messages', label: 'SMS', permission: 'SEND_PROMOTIONS' },
   { to: '/admin/products', label: 'Products', permission: 'MANAGE_PRODUCTS' },
   { to: '/admin/users', label: 'Staff', permission: 'MANAGE_USERS' },
+  { to: '/settings/hardware', label: 'Hardware', permission: 'MANAGE_SETTINGS' },
   { to: '/account', label: 'My account' },
 ]
 
@@ -26,7 +30,7 @@ export function AppLayout() {
   const items = NAV.filter((item) => !item.permission || can(user, item.permission))
 
   const linkClass = ({ isActive }: { isActive: boolean }) =>
-    `flex min-h-11 items-center rounded-xl px-3 text-sm font-medium transition-colors ${
+    `flex min-h-11 items-center rounded-xl px-2.5 text-sm font-medium transition-colors ${
       isActive ? 'bg-brand-soft text-foreground' : 'text-muted hover:bg-card hover:text-foreground'
     }`
 
@@ -36,7 +40,7 @@ export function AppLayout() {
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2 sm:px-6">
           <button
             type="button"
-            className="-ml-2 flex size-11 items-center justify-center rounded-xl text-xl md:hidden"
+            className="-ml-2 flex size-11 items-center justify-center rounded-xl text-xl xl:hidden"
             aria-label={menuOpen ? 'Close menu' : 'Open menu'}
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen((open) => !open)}
@@ -52,7 +56,7 @@ export function AppLayout() {
             </span>
             <span className="hidden sm:inline">Tavuzi Gadgets</span>
           </NavLink>
-          <nav aria-label="Main" className="ml-4 hidden items-center gap-1 md:flex">
+          <nav aria-label="Main" className="ml-4 hidden items-center gap-1 xl:flex">
             {items.map((item) => (
               <NavLink key={item.to} to={item.to} end className={linkClass}>
                 {item.label}
@@ -68,14 +72,14 @@ export function AppLayout() {
             <button
               type="button"
               onClick={() => void logout()}
-              className="hidden min-h-11 rounded-xl px-3 text-sm text-muted hover:bg-card hover:text-foreground md:block"
+              className="hidden min-h-11 rounded-xl px-3 text-sm text-muted hover:bg-card hover:text-foreground xl:block"
             >
               Sign out
             </button>
           </div>
         </div>
         {menuOpen && (
-          <nav aria-label="Main" className="animate-fade-in border-t border-border px-4 py-3 md:hidden">
+          <nav aria-label="Main" className="animate-fade-in border-t border-border px-4 py-3 xl:hidden">
             <p className="px-3 pb-2 text-sm">
               <span className="font-medium">{user?.fullName}</span>
               <span className="text-muted"> · {user && roleLabel(user.role)}</span>

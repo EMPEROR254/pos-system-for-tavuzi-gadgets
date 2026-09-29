@@ -26,7 +26,9 @@ import org.testcontainers.containers.PostgreSQLContainer;
       "app.auth.jwt-secret=integration-test-secret-that-is-long-enough",
       "app.bootstrap-owner.username=owner",
       "app.bootstrap-owner.password=owner-pass-123",
-      "app.bootstrap-owner.full-name=Test Owner"
+      "app.bootstrap-owner.full-name=Test Owner",
+      // Tests send queued SMS themselves (MessageService.queued()/sendOne()).
+      "app.sms.dispatch-enabled=false"
     })
 public abstract class IntegrationTest {
 

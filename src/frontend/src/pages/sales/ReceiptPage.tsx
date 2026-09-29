@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
 import { Button } from '../../components/Button'
 import { ApiError } from '../../services/api'
-import { getReceipt, printReceipt } from '../../services/sales'
+import { getReceipt, printReceipt, smsReceipt } from '../../services/sales'
 import { toast } from '../../utils/toast'
 import { ReceiptView } from './ReceiptView'
 import { ReturnDialog } from './ReturnDialog'
@@ -16,6 +16,19 @@ export default function ReceiptPage() {
   const justSold = params.get('new') === '1'
   const [returning, setReturning] = useState(false)
   const [printing, setPrinting] = useState(false)
+  const [texting, setTexting] = useState(false)
+
+  const sendSms = async () => {
+    setTexting(true)
+    try {
+      await smsReceipt(id)
+      toast.success('SMS receipt on its way.')
+    } catch (e) {
+      toast.error(e instanceof ApiError ? e.message : 'Could not send the SMS.')
+    } finally {
+      setTexting(false)
+    }
+  }
   const receipt = useQuery({ queryKey: ['receipt', id], queryFn: () => getReceipt(id), enabled: Number.isFinite(id) })
 
   const printToPrinter = async () => {
@@ -69,6 +82,11 @@ export default function ReceiptPage() {
         <Button variant="secondary" className="flex-1" busy={printing} onClick={() => void printToPrinter()}>
           Receipt printer
         </Button>
+        {sale.customerPhone && (
+          <Button variant="secondary" className="flex-1" busy={texting} onClick={() => void sendSms()}>
+            Send SMS
+          </Button>
+        )}
         {!justSold && sale.status !== 'RETURNED' && (
           <Button variant="ghost" className="w-full text-danger" onClick={() => setReturning(true)}>
             Return items…

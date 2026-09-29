@@ -32,6 +32,11 @@ export type CheckoutRequest = {
   customerName?: string
   customerPhone?: string
   approval?: Approval
+  customerId?: number
+  /** The customer agreed to promotional SMS. */
+  marketingOptIn?: boolean
+  /** Queue an SMS receipt to the customer's phone. */
+  smsReceipt?: boolean
 }
 
 export type SaleLineView = {
@@ -130,4 +135,8 @@ export function returnItems(saleId: number, body: ReturnRequest) {
     `/api/sales/${saleId}/returns`,
     { method: 'POST', body },
   )
+}
+
+export function smsReceipt(saleId: number): Promise<void> {
+  return request<void>(`/api/sales/${saleId}/sms-receipt`, { method: 'POST' })
 }

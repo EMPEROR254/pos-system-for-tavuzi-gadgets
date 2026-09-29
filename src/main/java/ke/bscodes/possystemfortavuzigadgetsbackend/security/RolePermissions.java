@@ -24,7 +24,9 @@ public final class RolePermissions {
             Permission.GIVE_DISCOUNT,
             Permission.VIEW_REPORTS,
             Permission.MANAGE_PRODUCTS,
-            Permission.MANAGE_STOCK));
+            Permission.MANAGE_STOCK,
+            Permission.MANAGE_CUSTOMERS,
+            Permission.SEND_PROMOTIONS));
     // Spec: some staff are blocked from discounts, refunds and reports.
     DEFAULTS.put(Role.CASHIER, EnumSet.of(Permission.MAKE_SALE));
   }

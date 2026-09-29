@@ -9,5 +9,9 @@ public enum Permission {
   MANAGE_PRODUCTS,
   MANAGE_STOCK,
   MANAGE_USERS,
-  MANAGE_SETTINGS
+  MANAGE_SETTINGS,
+  /** See and edit the full customer list (the till can still find and add customers). */
+  MANAGE_CUSTOMERS,
+  /** Send promotional SMS to customers who agreed to receive them. */
+  SEND_PROMOTIONS
 }

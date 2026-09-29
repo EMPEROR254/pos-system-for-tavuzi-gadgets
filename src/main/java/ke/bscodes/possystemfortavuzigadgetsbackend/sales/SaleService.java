@@ -10,7 +10,9 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import ke.bscodes.possystemfortavuzigadgetsbackend.auth.ApprovalService;
 import ke.bscodes.possystemfortavuzigadgetsbackend.common.ApiException;
-import ke.bscodes.possystemfortavuzigadgetsbackend.mpesa.Phones;
+import ke.bscodes.possystemfortavuzigadgetsbackend.customers.Customer;
+import ke.bscodes.possystemfortavuzigadgetsbackend.customers.CustomerService;
+import ke.bscodes.possystemfortavuzigadgetsbackend.messages.MessageService;
 import ke.bscodes.possystemfortavuzigadgetsbackend.products.Product;
 import ke.bscodes.possystemfortavuzigadgetsbackend.products.ProductRepository;
 import ke.bscodes.possystemfortavuzigadgetsbackend.sales.PaymentRules.CheckedPayment;
@@ -24,6 +26,7 @@ import ke.bscodes.possystemfortavuzigadgetsbackend.sales.SaleDtos.SaleView;
 import ke.bscodes.possystemfortavuzigadgetsbackend.security.AuthUser;
 import ke.bscodes.possystemfortavuzigadgetsbackend.security.Permission;
 import ke.bscodes.possystemfortavuzigadgetsbackend.security.RolePermissions;
+import ke.bscodes.possystemfortavuzigadgetsbackend.stock.StockService;
 import ke.bscodes.possystemfortavuzigadgetsbackend.tax.Vat;
 import ke.bscodes.possystemfortavuzigadgetsbackend.users.UserRepository;
 import org.springframework.data.domain.Page;
@@ -33,8 +36,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Checkout: prices the cart from the catalogue, checks discounts (supervisor approval for
- * cashiers), payments (split, M-Pesa codes used once), IMEIs (not sold twice), then saves the sale
- * with a new receipt number.
+ * cashiers), payments (split, M-Pesa codes used once), IMEIs (on the shelf, not sold twice), takes
+ * the stock out, links the customer, then saves the sale with a new receipt number and queues the
+ * SMS receipt if asked.
  */
 @Service
 public class SaleService {
@@ -48,6 +52,9 @@ public class SaleService {
   private final ProductRepository products;
   private final UserRepository users;
   private final ApprovalService approvals;
+  private final StockService stock;
+  private final CustomerService customers;
+  private final MessageService messages;
   private final Vat vat;
   private final Clock clock;
 
@@ -58,6 +65,9 @@ public class SaleService {
       ProductRepository products,
       UserRepository users,
       ApprovalService approvals,
+      StockService stock,
+      CustomerService customers,
+      MessageService messages,
       Vat vat,
       Clock clock) {
     this.sales = sales;
@@ -66,6 +76,9 @@ public class SaleService {
     this.products = products;
     this.users = users;
     this.approvals = approvals;
+    this.stock = stock;
+    this.customers = customers;
+    this.messages = messages;
     this.vat = vat;
     this.clock = clock;
   }
@@ -93,16 +106,34 @@ public class SaleService {
     checkMpesaCodesUnused(plan);
     checkSerialsNotSold(cart);
 
+    Customer customer =
+        customers.forSale(
+            request.customerId(),
+            request.customerName(),
+            request.customerPhone(),
+            request.marketingOptIn());
+
     String receiptNo = "TG%06d".formatted(sales.nextReceiptNumber());
+    // Stock out (and IMEIs off the shelf) in the same transaction as the sale.
+    stock.recordSale(
+        cart.lines().stream()
+            .map(
+                l ->
+                    new StockService.Change(
+                        l.productId(), l.quantity() * l.unitFactor(), l.serials()))
+            .toList(),
+        receiptNo,
+        actor.id());
     Sale sale =
         new Sale(
             receiptNo,
             request.clientRef(),
             users.getReferenceById(actor.id()),
             request.priceTier(),
-            blankToNull(request.customerName()),
-            phoneOrNull(request.customerPhone()),
+            customer != null ? customer.getName() : blankToNull(request.customerName()),
+            customer != null ? customer.getPhone() : null,
             now);
+    sale.setCustomerId(customer == null ? null : customer.getId());
     int lineNo = 1;
     for (PricedLine priced : cart.lines()) {
       SaleLine line = new SaleLine(sale, lineNo++, priced);
@@ -121,7 +152,18 @@ public class SaleService {
         plan.paid(),
         plan.change(),
         discountApprovedBy);
-    return SaleViews.of(sales.saveAndFlush(sale));
+    SaleView view = SaleViews.of(sales.saveAndFlush(sale));
+    if (request.smsReceipt() && view.customerPhone() != null) {
+      messages.queueReceipt(view, sale.getCustomerId());
+    }
+    return view;
+  }
+
+  /** Sends (again) the SMS receipt for a sale to the customer's phone. */
+  @Transactional
+  public void smsReceipt(AuthUser actor, long id) {
+    Sale sale = loadVisible(actor, id);
+    messages.queueReceipt(SaleViews.of(sale), sale.getCustomerId());
   }
 
   @Transactional(readOnly = true)
@@ -184,18 +226,6 @@ public class SaleService {
     List<String> sold = soldSerials.findActive(serials);
     if (!sold.isEmpty()) {
       throw ApiException.conflict(sold.getFirst() + " was already sold. Check the number.");
-    }
-  }
-
-  private static String phoneOrNull(String phone) {
-    if (phone == null || phone.isBlank()) {
-      return null;
-    }
-    try {
-      return Phones.normalize(phone);
-    } catch (IllegalArgumentException e) {
-      throw ApiException.badRequest(
-          "The customer's phone number doesn't look right (07XX XXX XXX).");
     }
   }
 

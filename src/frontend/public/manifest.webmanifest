@@ -1,0 +1,10 @@
+{
+  "name": "Tavuzi Gadgets POS",
+  "short_name": "Tavuzi POS",
+  "description": "Point of sale for Tavuzi Gadgets",
+  "start_url": "/sell",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#0f766e",
+  "icons": [{ "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

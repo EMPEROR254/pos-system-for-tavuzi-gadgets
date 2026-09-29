@@ -154,6 +154,7 @@ class SalesFlowTest extends IntegrationTest {
   @Test
   void splitPaymentSaleWithImeiReceiptAndWarranty() throws Exception {
     String imei = SerialsTest.imei("3569380356" + String.format("%04d", SEQ.get()));
+    stockImeis(imei);
     String code = mpesaCode();
     String clientRef = UUID.randomUUID().toString();
     Map<String, Object> sale =
@@ -281,6 +282,7 @@ class SalesFlowTest extends IntegrationTest {
   void returnsNeedTheOwnerAndFreeTheImei() throws Exception {
     int n = SEQ.get();
     String imei = SerialsTest.imei("8612340000" + String.format("%04d", n));
+    stockImeis(imei);
     JsonNode sale =
         body(
             send(
@@ -404,6 +406,23 @@ class SalesFlowTest extends IntegrationTest {
 
   private static String mpesaCode() {
     return ("SK" + UUID.randomUUID().toString().replace("-", "")).substring(0, 10).toUpperCase();
+  }
+
+  /** Puts phones on the shelf (the till only sells IMEIs that are in stock). */
+  private void stockImeis(String... imeis) throws Exception {
+    send(
+            owner,
+            "/api/stock/adjustments",
+            Map.of(
+                "productId",
+                phoneId,
+                "quantity",
+                imeis.length,
+                "reason",
+                "OPENING_STOCK",
+                "serials",
+                List.of(imeis)))
+        .andExpect(status().isOk());
   }
 
   private void createUser(String username, String role, String password) throws Exception {

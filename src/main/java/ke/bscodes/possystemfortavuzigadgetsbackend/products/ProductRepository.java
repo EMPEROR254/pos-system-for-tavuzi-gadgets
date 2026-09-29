@@ -1,5 +1,6 @@
 package ke.bscodes.possystemfortavuzigadgetsbackend.products;
 
+import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.List;
 import org.springframework.data.domain.Page;
@@ -22,6 +23,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                  or exists (select 1 from ProductUnit u where u.product = p and u.barcode = :exact))
             and (:category is null or p.category = :category)
             and (:active is null or p.active = :active)
+            and (:lowOnly = false or (p.reorderLevel > 0 and p.stockOnHand <= p.reorderLevel))
           """,
       countQuery =
           """
@@ -30,9 +32,25 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
                  or exists (select 1 from ProductUnit u where u.product = p and u.barcode = :exact))
             and (:category is null or p.category = :category)
             and (:active is null or p.active = :active)
+            and (:lowOnly = false or (p.reorderLevel > 0 and p.stockOnHand <= p.reorderLevel))
           """)
   Page<Long> searchIds(
-      String pattern, String exact, String category, Boolean active, Pageable pageable);
+      String pattern,
+      String exact,
+      String category,
+      Boolean active,
+      boolean lowOnly,
+      Pageable pageable);
+
+  @Query(
+      "select count(p) from Product p"
+          + " where p.active = true and p.reorderLevel > 0 and p.stockOnHand <= p.reorderLevel")
+  long countLowStock();
+
+  /** Value of what is on the shelves at cost (negative counts are ignored). */
+  @Query(
+      "select coalesce(sum(p.stockOnHand * p.costPrice), 0) from Product p where p.stockOnHand > 0")
+  BigDecimal stockValue();
 
   @Query("select distinct p from Product p left join fetch p.units where p.id in :ids")
   List<Product> findWithUnits(Collection<Long> ids);

@@ -52,4 +52,16 @@ public interface SaleRepository extends JpaRepository<Sale, Long> {
       String receipt,
       Collection<SaleStatus> statuses,
       Pageable pageable);
+
+  @Query(
+      value =
+          """
+          select new ke.bscodes.possystemfortavuzigadgetsbackend.sales.SaleDtos$SaleSummary(
+              s.id, s.receiptNo, s.createdAt, c.fullName, cast(s.status as string), s.total,
+              s.customerName)
+          from Sale s join s.cashier c
+          where s.customerId = :customerId
+          """,
+      countQuery = "select count(s) from Sale s where s.customerId = :customerId")
+  Page<SaleSummary> forCustomer(long customerId, Pageable pageable);
 }

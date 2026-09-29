@@ -43,6 +43,7 @@ public class Sale {
   @Enumerated(EnumType.STRING)
   private SaleStatus status = SaleStatus.COMPLETED;
 
+  private Long customerId;
   private String customerName;
   private String customerPhone;
   private BigDecimal subtotal;
@@ -78,6 +79,10 @@ public class Sale {
     this.customerName = customerName;
     this.customerPhone = customerPhone;
     this.createdAt = now;
+  }
+
+  public void setCustomerId(Long customerId) {
+    this.customerId = customerId;
   }
 
   public void addLine(SaleLine line) {
@@ -139,6 +144,10 @@ public class Sale {
 
   public SaleStatus getStatus() {
     return status;
+  }
+
+  public Long getCustomerId() {
+    return customerId;
   }
 
   public String getCustomerName() {

@@ -1,18 +1,21 @@
 // The till: find products, build the cart, pause/resume sales, take payment.
 // On a laptop the cart is on the left and the totals on the right; on a phone
 // the totals and Pay button stay pinned at the bottom.
+import { useQuery } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { Button } from '../../components/Button'
 import { inputClass } from '../../components/Field'
 import { ApiError } from '../../services/api'
-import { checkout, type Approval, type CheckoutPayment } from '../../services/sales'
+import { getPrinter } from '../../services/hardware'
+import { checkout, printReceipt, type Approval, type CheckoutPayment } from '../../services/sales'
 import { useSession } from '../../services/session'
 import { formatKes } from '../../utils/format'
 import { can } from '../../utils/permissions'
 import { toast } from '../../utils/toast'
 import { CartLineRow } from './CartLineRow'
 import { cartProblems, cartTotals } from './cartMath'
+import { CustomerPicker } from './CustomerPicker'
 import { useCart } from './cartStore'
 import { HeldSalesDialog } from './HeldSalesDialog'
 import { PaymentDialog } from './PaymentDialog'
@@ -27,6 +30,7 @@ export default function SellPage() {
   const [busy, setBusy] = useState(false)
   const [payError, setPayError] = useState<string | null>(null)
   const [showProblems, setShowProblems] = useState(false)
+  const printer = useQuery({ queryKey: ['hardware', 'printer'], queryFn: getPrinter, staleTime: 5 * 60_000 })
 
   const totals = cartTotals(cart.lines, cart.priceTier)
   const problems = cartProblems(cart.lines, cart.priceTier)
@@ -57,12 +61,21 @@ export default function SellPage() {
         payments,
         customerName: cart.customerName.trim() || undefined,
         customerPhone: cart.customerPhone.trim() || undefined,
+        customerId: cart.customerId ?? undefined,
+        marketingOptIn: cart.marketingOptIn ?? false,
+        smsReceipt: Boolean(cart.customerPhone.trim()) && (cart.smsReceipt ?? true),
         approval,
       })
       clear()
       setPaying(false)
       setShowProblems(false)
       toast.success(`Sale ${sale.receiptNo} saved.${sale.changeDue > 0 ? ` Change: ${formatKes(sale.changeDue)}` : ''}`)
+      if (printer.data?.autoPrint && printer.data.host) {
+        // Printing must never block the next sale: report problems, don't wait.
+        printReceipt(sale.id).catch((e: unknown) =>
+          toast.error(e instanceof ApiError ? e.message : 'The receipt did not print.'),
+        )
+      }
       navigate(`/sales/${sale.id}/receipt?new=1`)
     } catch (e) {
       setPayError(
@@ -139,24 +152,10 @@ export default function SellPage() {
               </button>
             ))}
           </div>
-          <details className="text-sm">
+          <details className="text-sm" open={Boolean(cart.customerPhone || cart.customerId)}>
             <summary className="flex min-h-11 cursor-pointer items-center text-muted">Customer (optional)</summary>
-            <div className="mt-2 space-y-2">
-              <input
-                aria-label="Customer name"
-                placeholder="Name"
-                value={cart.customerName}
-                onChange={(e) => setCustomer(e.target.value, cart.customerPhone)}
-                className={inputClass}
-              />
-              <input
-                aria-label="Customer phone"
-                placeholder="Phone, e.g. 0712 345 678"
-                inputMode="tel"
-                value={cart.customerPhone}
-                onChange={(e) => setCustomer(cart.customerName, e.target.value)}
-                className={inputClass}
-              />
+            <div className="mt-2">
+              <CustomerPicker cart={cart} onChange={setCustomer} />
             </div>
           </details>
           <dl className="grid grid-cols-2 gap-y-1 text-sm">
