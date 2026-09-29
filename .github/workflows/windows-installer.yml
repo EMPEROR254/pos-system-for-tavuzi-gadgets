@@ -1,0 +1,115 @@
+# Builds the Windows installer (.exe) for POS System for Tavuzi Gadgets. Written by BS Codes.
+#
+# Starts when BS Codes pushes an "installer-..." tag (Build tab → Build Windows
+# installer). On a GitHub Windows machine it:
+#   1. builds the web app and the Spring Boot jar
+#   2. adds its own Java runtime, PostgreSQL and WinSW (runs the app as a service)
+#   3. makes one setup file with Inno Setup (installer/windows/installer.iss)
+#   4. installs that file on this machine and checks the app starts
+#   5. attaches the .exe to a GitHub release named after the tag
+# If something fails, a release marked "failed" tells BS Codes where to look.
+name: Windows installer
+on:
+  push:
+    tags: ['installer-*']
+permissions:
+  contents: write
+env:
+  # Keep the PostgreSQL MAJOR version (17) fixed for a client: a new major
+  # version cannot open the old database files without pg_upgrade.
+  POSTGRES_ZIP: https://get.enterprisedb.com/postgresql/postgresql-17.6-1-windows-x64-binaries.zip
+  WINSW_EXE: https://github.com/winsw/winsw/releases/download/v2.12.0/WinSW-x64.exe
+jobs:
+  installer:
+    runs-on: windows-2022
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        if: hashFiles('src/frontend/package.json') != ''
+        with:
+          node-version: 22
+      - name: Build the web app
+        if: hashFiles('src/frontend/package.json') != ''
+        working-directory: src/frontend
+        run: |
+          npm ci
+          npm run build
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Build the app
+        run: mvn -B -q -DskipTests package
+
+      - name: Collect the app, Java, PostgreSQL and the service runner
+        run: |
+          $ProgressPreference = 'SilentlyContinue'
+          $out = 'installer\windows\build'
+          New-Item -ItemType Directory -Force "$out\app" | Out-Null
+          $jar = Get-ChildItem target\*.jar | Where-Object { $_.Name -notlike '*-plain.jar' } | Select-Object -First 1
+          if (-not $jar) { throw 'No jar in target\ - did mvn package work?' }
+          Copy-Item $jar.FullName "$out\app\app.jar"
+          if (Test-Path .env.example) { Copy-Item .env.example "$out\settings-example.env" }
+          else { New-Item -ItemType File "$out\settings-example.env" | Out-Null }
+
+          # A private Java runtime with every module, so any Spring Boot app runs.
+          jlink --module-path "$env:JAVA_HOME\jmods" --add-modules ALL-MODULE-PATH `
+            --strip-debug --no-header-files --no-man-pages --compress=zip-6 --output "$out\java"
+
+          # PostgreSQL server and tools only (no pgAdmin, StackBuilder or docs).
+          Invoke-WebRequest $env:POSTGRES_ZIP -OutFile pg.zip
+          Expand-Archive pg.zip -DestinationPath pgtmp
+          foreach ($extra in 'pgAdmin 4', 'StackBuilder', 'doc', 'include', 'symbols') {
+            Remove-Item -Recurse -Force "pgtmp\pgsql\$extra" -ErrorAction SilentlyContinue
+          }
+          Move-Item pgtmp\pgsql "$out\pgsql"
+
+          Invoke-WebRequest $env:WINSW_EXE -OutFile "$out\app\service.exe"
+
+      - name: Make the setup file
+        run: |
+          choco install innosetup -y --no-progress
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" /Qp "/DAppVersion=1.0.${{ github.run_number }}" installer\windows\installer.iss
+          if ($LASTEXITCODE -ne 0) { throw 'Inno Setup failed' }
+
+      - name: Install it on this machine and check the app starts
+        run: |
+          $exe = Get-ChildItem installer\windows\Output\*.exe | Select-Object -First 1
+          $p = Start-Process $exe.FullName -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/LOG=install.log' -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "The installer failed (exit code $($p.ExitCode))" }
+          $state = Get-Content "$env:ProgramData\pos-system-for-tavuzi-gadgets\config\install.json" -Raw | ConvertFrom-Json
+          $code = & curl.exe -s -o NUL -w '%{http_code}' "http://localhost:$($state.appPort)/"
+          if ($code -eq '000') { throw 'The app is not answering after the install' }
+          Write-Output "The app answers on port $($state.appPort) (HTTP $code)."
+
+      - name: Show the logs
+        if: failure()
+        run: |
+          Get-Content install.log -Tail 60 -ErrorAction SilentlyContinue
+          Get-ChildItem "$env:ProgramData\pos-system-for-tavuzi-gadgets\logs" -ErrorAction SilentlyContinue | ForEach-Object {
+            Write-Output "===== $($_.Name)"
+            Get-Content $_.FullName -Tail 80
+          }
+
+      - name: Publish the installer
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $exe = Get-ChildItem installer\windows\Output\*.exe | Select-Object -First 1
+          gh release create $env:GITHUB_REF_NAME $exe.FullName --title "POS System for Tavuzi Gadgets 1.0.${{ github.run_number }} (Windows)" `
+            --notes "Windows installer. Run it on the client's PC as administrator. Upgrades keep the data."
+
+      - name: Tell BS Codes it failed
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $log = "$env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID"
+          gh release create $env:GITHUB_REF_NAME --prerelease --title 'Installer build failed' --notes "Build log: $log"
