@@ -1,6 +1,7 @@
 package ke.bscodes.possystemfortavuzigadgetsbackend.sales;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
@@ -12,6 +13,7 @@ import ke.bscodes.possystemfortavuzigadgetsbackend.auth.ApprovalService;
 import ke.bscodes.possystemfortavuzigadgetsbackend.common.ApiException;
 import ke.bscodes.possystemfortavuzigadgetsbackend.customers.Customer;
 import ke.bscodes.possystemfortavuzigadgetsbackend.customers.CustomerService;
+import ke.bscodes.possystemfortavuzigadgetsbackend.etims.EtimsService;
 import ke.bscodes.possystemfortavuzigadgetsbackend.messages.MessageService;
 import ke.bscodes.possystemfortavuzigadgetsbackend.products.Product;
 import ke.bscodes.possystemfortavuzigadgetsbackend.products.ProductRepository;
@@ -43,6 +45,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class SaleService {
 
+  /** Offline sales older than this are refused at sync (the till's clock may be wrong). */
+  static final int OFFLINE_MAX_DAYS = 7;
+
   private static final List<PaymentMethod> MPESA =
       List.of(PaymentMethod.MPESA_TILL, PaymentMethod.MPESA_PAYBILL);
 
@@ -55,6 +60,7 @@ public class SaleService {
   private final StockService stock;
   private final CustomerService customers;
   private final MessageService messages;
+  private final EtimsService etims;
   private final Vat vat;
   private final Clock clock;
 
@@ -68,6 +74,7 @@ public class SaleService {
       StockService stock,
       CustomerService customers,
       MessageService messages,
+      EtimsService etims,
       Vat vat,
       Clock clock) {
     this.sales = sales;
@@ -79,6 +86,7 @@ public class SaleService {
     this.stock = stock;
     this.customers = customers;
     this.messages = messages;
+    this.etims = etims;
     this.vat = vat;
     this.clock = clock;
   }
@@ -91,12 +99,13 @@ public class SaleService {
       return SaleViews.of(visibleTo(actor, already.get()));
     }
     Instant now = clock.instant();
+    Instant soldAt = saleTime(request.offlineCreatedAt(), now);
     List<Long> ids = request.lines().stream().map(LineRequest::productId).distinct().toList();
     Map<Long, Product> catalogue =
         products.findWithUnits(ids).stream()
             .collect(Collectors.toMap(Product::getId, Function.identity()));
     PricedCart cart =
-        SaleCalculator.price(request.lines(), catalogue, request.priceTier(), vat, now);
+        SaleCalculator.price(request.lines(), catalogue, request.priceTier(), vat, soldAt);
 
     Long discountApprovedBy =
         cart.hasDiscount()
@@ -132,8 +141,11 @@ public class SaleService {
             request.priceTier(),
             customer != null ? customer.getName() : blankToNull(request.customerName()),
             customer != null ? customer.getPhone() : null,
-            now);
+            soldAt);
     sale.setCustomerId(customer == null ? null : customer.getId());
+    if (request.offlineCreatedAt() != null) {
+      sale.markSyncedFromOffline(now);
+    }
     int lineNo = 1;
     for (PricedLine priced : cart.lines()) {
       SaleLine line = new SaleLine(sale, lineNo++, priced);
@@ -141,7 +153,7 @@ public class SaleService {
       sale.addLine(line);
     }
     for (CheckedPayment p : plan.payments()) {
-      sale.addPayment(new Payment(sale, p.method(), p.amount(), p.reference(), now));
+      sale.addPayment(new Payment(sale, p.method(), p.amount(), p.reference(), soldAt));
     }
     var t = cart.totals();
     sale.setTotals(
@@ -153,10 +165,26 @@ public class SaleService {
         plan.change(),
         discountApprovedBy);
     SaleView view = SaleViews.of(sales.saveAndFlush(sale));
+    etims.queueSale(sale.getId());
     if (request.smsReceipt() && view.customerPhone() != null) {
       messages.queueReceipt(view, sale.getCustomerId());
     }
     return view;
+  }
+
+  /**
+   * When the sale happened: now, or - for a sale made offline and synced later - the till's time,
+   * as long as it is believable (not in the future, at most 7 days old).
+   */
+  static Instant saleTime(Instant offlineCreatedAt, Instant now) {
+    if (offlineCreatedAt == null) {
+      return now;
+    }
+    if (offlineCreatedAt.isBefore(now.minus(Duration.ofDays(OFFLINE_MAX_DAYS)))) {
+      throw ApiException.badRequest(
+          "This offline sale is more than " + OFFLINE_MAX_DAYS + " days old. Ask the owner.");
+    }
+    return offlineCreatedAt.isAfter(now) ? now : offlineCreatedAt;
   }
 
   /** Sends (again) the SMS receipt for a sale to the customer's phone. */

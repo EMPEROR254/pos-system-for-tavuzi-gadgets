@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import ke.bscodes.possystemfortavuzigadgetsbackend.etims.EtimsService;
 import ke.bscodes.possystemfortavuzigadgetsbackend.hardware.PrinterService;
 import ke.bscodes.possystemfortavuzigadgetsbackend.receipts.ReceiptView.VatLine;
 import ke.bscodes.possystemfortavuzigadgetsbackend.sales.SaleDtos.LineView;
@@ -23,15 +24,18 @@ public class ReceiptService {
   private final SaleService sales;
   private final ShopProperties shop;
   private final PrinterService printer;
+  private final EtimsService etims;
 
-  public ReceiptService(SaleService sales, ShopProperties shop, PrinterService printer) {
+  public ReceiptService(
+      SaleService sales, ShopProperties shop, PrinterService printer, EtimsService etims) {
     this.sales = sales;
     this.shop = shop;
     this.printer = printer;
+    this.etims = etims;
   }
 
   public ReceiptView receipt(AuthUser actor, long saleId) {
-    return build(sales.get(actor, saleId));
+    return build(sales.get(actor, saleId), etims.forReceipt(saleId));
   }
 
   /** Prints on the shop's receipt printer; opens the cash drawer when cash was taken. */
@@ -41,7 +45,7 @@ public class ReceiptService {
     printer.print(EscPosReceipt.render(view, printer.current().width()), cash);
   }
 
-  ReceiptView build(SaleView sale) {
+  ReceiptView build(SaleView sale, EtimsService.ReceiptInfo etimsInfo) {
     List<String> details = new ArrayList<>();
     addIfSet(details, shop.location());
     addIfSet(details, isSet(shop.phone()) ? "Tel: " + shop.phone() : null);
@@ -61,7 +65,8 @@ public class ReceiptService {
         sale,
         vatBreakdown(sale.lines()),
         shop.returnPolicy(),
-        shop.footer());
+        shop.footer(),
+        etimsInfo);
   }
 
   /** Groups lines by tax code (A exempt, B 16%, C zero-rated). */

@@ -5,7 +5,8 @@ import { useRef, useState, type KeyboardEvent } from 'react'
 import { CameraScanButton } from '../../components/CameraScanner'
 import { inputClass } from '../../components/Field'
 import { ApiError } from '../../services/api'
-import { lookupProducts, type SellableProduct } from '../../services/products'
+import type { SellableProduct } from '../../services/products'
+import { findProducts } from './findProducts'
 import type { PriceTier } from '../../services/sales'
 import { formatKes } from '../../utils/format'
 import { toast } from '../../utils/toast'
@@ -20,7 +21,7 @@ export function ProductSearch({ tier, onAdd }: Props) {
   const q = useDebounced(text.trim(), 250)
   const results = useQuery({
     queryKey: ['product-lookup', q],
-    queryFn: () => lookupProducts(q),
+    queryFn: () => findProducts(q),
     enabled: q.length >= 2,
     staleTime: 60_000,
   })
@@ -40,7 +41,7 @@ export function ProductSearch({ tier, onAdd }: Props) {
   /** A scanned (USB scanner or camera) or typed code: add the product if exactly one matches. */
   const addByCode = async (code: string) => {
     try {
-      const found = await lookupProducts(code)
+      const found = await findProducts(code)
       if (found.length === 1) {
         // A unit barcode (e.g. a carton) adds that unit, otherwise the base unit.
         const unit = found[0].units.find((u) => u.barcode === code)

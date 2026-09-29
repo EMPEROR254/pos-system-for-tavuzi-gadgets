@@ -78,4 +78,16 @@ public class SaleReturn {
   public BigDecimal getVatAmount() {
     return vatAmount;
   }
+
+  public Sale getSale() {
+    return sale;
+  }
+
+  public Instant getCreatedAt() {
+    return createdAt;
+  }
+
+  public List<SaleReturnLine> getLines() {
+    return lines;
+  }
 }

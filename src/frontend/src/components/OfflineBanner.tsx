@@ -1,4 +1,4 @@
-// The system works online only: say so clearly when the connection drops.
+// Say clearly when the connection drops - and that selling carries on.
 import { useEffect, useState } from 'react'
 
 export function OfflineBanner() {
@@ -18,7 +18,7 @@ export function OfflineBanner() {
   if (online) return null
   return (
     <div role="alert" className="bg-danger px-4 py-2 print:hidden text-center text-sm font-medium text-white">
-      No connection to the network. Changes can't be saved until it is back.
+      No connection. You can keep selling - sales are saved on this till and sent when the connection is back.
     </div>
   )
 }

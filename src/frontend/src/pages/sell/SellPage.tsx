@@ -8,13 +8,21 @@ import { Button } from '../../components/Button'
 import { inputClass } from '../../components/Field'
 import { ApiError } from '../../services/api'
 import { getPrinter } from '../../services/hardware'
-import { checkout, printReceipt, type Approval, type CheckoutPayment } from '../../services/sales'
+import { isUnreachable, useOffline } from '../../services/offline'
+import {
+  checkout,
+  PAYMENT_LABELS,
+  printReceipt,
+  type Approval,
+  type CheckoutPayment,
+  type CheckoutRequest,
+} from '../../services/sales'
 import { useSession } from '../../services/session'
 import { formatKes } from '../../utils/format'
 import { can } from '../../utils/permissions'
 import { toast } from '../../utils/toast'
 import { CartLineRow } from './CartLineRow'
-import { cartProblems, cartTotals } from './cartMath'
+import { cartProblems, cartTotals, lineAmounts, unitOf } from './cartMath'
 import { CustomerPicker } from './CustomerPicker'
 import { useCart } from './cartStore'
 import { HeldSalesDialog } from './HeldSalesDialog'
@@ -46,26 +54,27 @@ export default function SellPage() {
   const pay = async (payments: CheckoutPayment[], approval?: Approval) => {
     setBusy(true)
     setPayError(null)
+    // The cart's clientRef makes a retry safe: the server never saves it twice.
+    const request: CheckoutRequest = {
+      clientRef: cart.clientRef,
+      priceTier: cart.priceTier,
+      lines: cart.lines.map((l) => ({
+        productId: l.product.id,
+        unitId: l.unitId,
+        quantity: l.quantity,
+        discount: l.discount || undefined,
+        serials: l.serials.filter((s) => s.trim()),
+      })),
+      payments,
+      customerName: cart.customerName.trim() || undefined,
+      customerPhone: cart.customerPhone.trim() || undefined,
+      customerId: cart.customerId ?? undefined,
+      marketingOptIn: cart.marketingOptIn ?? false,
+      smsReceipt: Boolean(cart.customerPhone.trim()) && (cart.smsReceipt ?? true),
+      approval,
+    }
     try {
-      // The cart's clientRef makes a retry safe: the server never saves it twice.
-      const sale = await checkout({
-        clientRef: cart.clientRef,
-        priceTier: cart.priceTier,
-        lines: cart.lines.map((l) => ({
-          productId: l.product.id,
-          unitId: l.unitId,
-          quantity: l.quantity,
-          discount: l.discount || undefined,
-          serials: l.serials.filter((s) => s.trim()),
-        })),
-        payments,
-        customerName: cart.customerName.trim() || undefined,
-        customerPhone: cart.customerPhone.trim() || undefined,
-        customerId: cart.customerId ?? undefined,
-        marketingOptIn: cart.marketingOptIn ?? false,
-        smsReceipt: Boolean(cart.customerPhone.trim()) && (cart.smsReceipt ?? true),
-        approval,
-      })
+      const sale = await checkout(request)
       clear()
       setPaying(false)
       setShowProblems(false)
@@ -78,12 +87,49 @@ export default function SellPage() {
       }
       navigate(`/sales/${sale.id}/receipt?new=1`)
     } catch (e) {
-      setPayError(
-        e instanceof ApiError ? e.message : 'Could not save the sale. Try again - it will not be saved twice.',
-      )
+      if (isUnreachable(e)) {
+        saveOffline(request, payments)
+      } else {
+        setPayError(
+          e instanceof ApiError ? e.message : 'Could not save the sale. Try again - it will not be saved twice.',
+        )
+      }
     } finally {
       setBusy(false)
     }
+  }
+
+  /** The server can't be reached: keep the sale on this till; it is sent when the server is back. */
+  const saveOffline = (request: CheckoutRequest, payments: CheckoutPayment[]) => {
+    if (request.approval) {
+      // A supervisor's password must never be stored on the till, so it can't wait for later.
+      setPayError('Discount approval needs the server. Remove the discount, or wait for the connection.')
+      return
+    }
+    const paid = payments.reduce((sum, p) => sum + Math.round(p.amount * 100), 0) / 100
+    useOffline.getState().add({
+      clientRef: request.clientRef,
+      request: { ...request, offlineCreatedAt: new Date().toISOString() },
+      total: totals.total,
+      itemCount: totals.items,
+      cashierName: user?.fullName ?? '',
+      createdAt: new Date().toISOString(),
+      receipt: {
+        lines: cart.lines.map((l) => ({
+          name: l.product.name,
+          unitName: unitOf(l).name,
+          quantity: l.quantity,
+          total: lineAmounts(l, cart.priceTier).total,
+        })),
+        payments: payments.map((p) => ({ label: PAYMENT_LABELS[p.method], amount: p.amount, reference: p.reference })),
+        change: Math.max(0, Math.round((paid - totals.total) * 100) / 100),
+      },
+    })
+    clear()
+    setPaying(false)
+    setShowProblems(false)
+    toast.success('No connection: the sale is saved on this till and will be sent automatically.')
+    navigate(`/sync/receipt/${request.clientRef}`)
   }
 
   const holdSale = () => {

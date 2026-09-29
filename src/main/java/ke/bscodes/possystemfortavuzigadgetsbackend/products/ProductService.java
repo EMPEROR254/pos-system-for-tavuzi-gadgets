@@ -69,6 +69,14 @@ public class ProductService {
         .getContent();
   }
 
+  /** Every active product as the till sees it (for the offline copy of the catalogue). */
+  @Transactional(readOnly = true)
+  public List<SellableProduct> sellable(Pageable pageable) {
+    return load(null, null, true, false, pageable)
+        .map(p -> SellableProduct.from(p, vat.ratePercent(p.getVatCategory())))
+        .getContent();
+  }
+
   @Transactional(readOnly = true)
   public ProductResponse get(long id) {
     return ProductResponse.from(find(id));

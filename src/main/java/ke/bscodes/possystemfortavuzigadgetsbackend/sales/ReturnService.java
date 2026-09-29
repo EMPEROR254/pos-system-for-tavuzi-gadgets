@@ -13,6 +13,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import ke.bscodes.possystemfortavuzigadgetsbackend.auth.ApprovalService;
 import ke.bscodes.possystemfortavuzigadgetsbackend.common.ApiException;
+import ke.bscodes.possystemfortavuzigadgetsbackend.etims.EtimsService;
 import ke.bscodes.possystemfortavuzigadgetsbackend.sales.SaleDtos.ReturnLineRequest;
 import ke.bscodes.possystemfortavuzigadgetsbackend.sales.SaleDtos.ReturnRequest;
 import ke.bscodes.possystemfortavuzigadgetsbackend.sales.SaleDtos.ReturnView;
@@ -35,6 +36,7 @@ public class ReturnService {
   private final SaleReturnRepository returns;
   private final ApprovalService approvals;
   private final StockService stock;
+  private final EtimsService etims;
   private final Clock clock;
 
   public ReturnService(
@@ -42,11 +44,13 @@ public class ReturnService {
       SaleReturnRepository returns,
       ApprovalService approvals,
       StockService stock,
+      EtimsService etims,
       Clock clock) {
     this.sales = sales;
     this.returns = returns;
     this.approvals = approvals;
     this.stock = stock;
+    this.etims = etims;
     this.clock = clock;
   }
 
@@ -89,7 +93,8 @@ public class ReturnService {
     }
     stock.recordReturn(stockBack, sale.getReceiptNo(), actor.id());
     sale.refreshReturnStatus();
-    SaleReturn saved = returns.save(saleReturn);
+    SaleReturn saved = returns.saveAndFlush(saleReturn);
+    etims.queueRefund(sale.getId(), saved.getId());
     return new ReturnView(
         saved.getId(),
         sale.getReceiptNo(),

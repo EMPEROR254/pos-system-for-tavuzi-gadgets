@@ -39,9 +39,11 @@ public final class SaleDtos {
 
   /**
    * A finished cart from the till. The customer is customerId, or found/added by phone
-   * (marketingOptIn = they agreed to promotions); smsReceipt queues an SMS receipt. clientRef is a
-   * random id made by the till: sending the same sale twice (double tap, retry after a network
-   * error) returns the first sale, not a second one.
+   * (marketingOptIn = they agreed to promotions); smsReceipt queues an SMS receipt.
+   * offlineCreatedAt is set when the till sold while it could not reach the server and is syncing
+   * the sale now: it is when the sale really happened. clientRef is a random id made by the till:
+   * sending the same sale twice (double tap, retry after a network error) returns the first sale,
+   * not a second one.
    */
   public record CheckoutRequest(
       @NotBlank(message = "Missing sale id.") @Size(max = 64) String clientRef,
@@ -53,7 +55,8 @@ public final class SaleDtos {
       Approval approval,
       Long customerId,
       boolean marketingOptIn,
-      boolean smsReceipt) {}
+      boolean smsReceipt,
+      Instant offlineCreatedAt) {}
 
   public record SerialView(String serial, boolean returned) {}
 

@@ -12,10 +12,15 @@ export async function login(username: string, password: string): Promise<Current
   return session.user
 }
 
-/** On app start: use the refresh cookie (if any) to sign back in. */
+/**
+ * On app start: use the refresh cookie (if any) to sign back in. If the server can't be reached,
+ * the last person signed in on this till carries on offline (selling only; the server checks
+ * everything when the sales sync).
+ */
 export async function restoreSession(): Promise<void> {
-  const ok = await refreshAccessToken()
-  if (!ok) useSession.getState().signOut()
+  const result = await refreshAccessToken()
+  if (result === 'refused') useSession.getState().signOut()
+  if (result === 'offline' && !useSession.getState().resumeOffline()) useSession.getState().signOut()
 }
 
 export async function logout(): Promise<void> {

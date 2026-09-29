@@ -50,6 +50,12 @@ public class Product {
   /** Low-stock alert when stock is at or below this (0 = no alert). */
   private int reorderLevel;
 
+  /** KRA eTIMS item class (UNSPSC-based code); empty = the shop's default from .env. */
+  private String etimsItemClass;
+
+  /** When the product was registered with KRA eTIMS (null = not yet). */
+  private Instant etimsRegisteredAt;
+
   private Instant createdAt;
   private Instant updatedAt;
 
@@ -110,6 +116,23 @@ public class Product {
               .add(costPerBaseUnit.multiply(BigDecimal.valueOf(baseUnits)))
               .divide(BigDecimal.valueOf(onShelf + baseUnits), 2, RoundingMode.HALF_UP);
     }
+  }
+
+  public void markEtimsRegistered(Instant now) {
+    this.etimsRegisteredAt = now;
+  }
+
+  public void setEtimsItemClass(String etimsItemClass) {
+    this.etimsItemClass = etimsItemClass;
+    this.etimsRegisteredAt = null;
+  }
+
+  public String getEtimsItemClass() {
+    return etimsItemClass;
+  }
+
+  public Instant getEtimsRegisteredAt() {
+    return etimsRegisteredAt;
   }
 
   public boolean isLowOnStock() {

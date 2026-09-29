@@ -1,11 +1,14 @@
 package ke.bscodes.possystemfortavuzigadgetsbackend.receipts;
 
+import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import ke.bscodes.possystemfortavuzigadgetsbackend.etims.EtimsService;
 import ke.bscodes.possystemfortavuzigadgetsbackend.receipt.EscPosBuilder;
 import ke.bscodes.possystemfortavuzigadgetsbackend.receipt.EscPosBuilder.Align;
 import ke.bscodes.possystemfortavuzigadgetsbackend.receipt.ReceiptRenderer;
@@ -93,8 +96,16 @@ public final class EscPosReceipt {
     if (r.returnPolicy() != null && !r.returnPolicy().isBlank()) {
       wrap(r.returnPolicy(), width).forEach(p::line);
     }
-    r.footer().forEach(p::line);
-    return p.feed(3).cut().build();
+    etims(p, r.etims(), width);
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    out.writeBytes(p.build());
+    if (r.etims() != null && r.etims().verifyUrl() != null) {
+      out.writeBytes(qrCode(r.etims().verifyUrl()));
+    }
+    EscPosBuilder end = new EscPosBuilder().align(Align.CENTER);
+    r.footer().forEach(end::line);
+    out.writeBytes(end.feed(3).cut().build());
+    return out.toByteArray();
   }
 
   private static String col(String left, String right, int width) {
@@ -103,6 +114,47 @@ public final class EscPosReceipt {
 
   private static String fit(String text, int width) {
     return text.length() > width ? text.substring(0, width) : text;
+  }
+
+  /** The KRA eTIMS block: signed invoice details, or a note that it is on its way. */
+  private static void etims(EscPosBuilder p, EtimsService.ReceiptInfo e, int width) {
+    if (e == null) {
+      return;
+    }
+    p.line("-".repeat(width)).align(Align.LEFT);
+    if (!"SENT".equals(e.status())) {
+      p.line("KRA eTIMS invoice " + e.invoiceNo() + ": being sent to KRA");
+      return;
+    }
+    p.bold(true).line("KRA eTIMS").bold(false);
+    p.line(col("Invoice no.", String.valueOf(e.invoiceNo()), width));
+    p.line(col("SCU ID", nullToEmpty(e.scuId()), width));
+    p.line(col("Receipt no.", e.scuReceiptNo() + "/" + e.totalReceiptNo(), width));
+    p.line(col("Date", nullToEmpty(e.scuDate()), width));
+    p.line("Internal data: " + nullToEmpty(e.internalData()));
+    p.line("Signature: " + nullToEmpty(e.signature()));
+    p.align(Align.CENTER);
+  }
+
+  /** ESC/POS QR code (GS ( k), size 6, error correction L - for the KRA check link. */
+  static byte[] qrCode(String data) {
+    byte[] text = data.getBytes(StandardCharsets.US_ASCII);
+    int len = text.length + 3;
+    ByteArrayOutputStream out = new ByteArrayOutputStream();
+    out.writeBytes(new byte[] {0x1B, 0x61, 0x01}); // centre
+    out.writeBytes(new byte[] {0x1D, 0x28, 0x6B, 0x04, 0x00, 0x31, 0x41, 0x32, 0x00}); // model 2
+    out.writeBytes(new byte[] {0x1D, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x43, 0x06}); // size
+    out.writeBytes(new byte[] {0x1D, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x45, 0x30}); // error level L
+    out.writeBytes(
+        new byte[] {0x1D, 0x28, 0x6B, (byte) (len % 256), (byte) (len / 256), 0x31, 0x50, 0x30});
+    out.writeBytes(text);
+    out.writeBytes(new byte[] {0x1D, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x51, 0x30}); // print
+    out.writeBytes(new byte[] {0x0A});
+    return out.toByteArray();
+  }
+
+  private static String nullToEmpty(String s) {
+    return s == null ? "" : s;
   }
 
   /** Splits text into lines of at most width characters, breaking between words. */

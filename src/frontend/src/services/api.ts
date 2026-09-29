@@ -3,7 +3,8 @@
 //
 // request() adds the access token, and when the server says 401 (token ran
 // out after 15 minutes) it quietly gets a new one with the refresh cookie and
-// tries once more. If that fails too, the user is signed out.
+// tries once more. If the server refuses, the user is signed out; if the server
+// can't be reached, they stay signed in (the till can keep selling offline).
 import { useSession, type CurrentUser } from './session'
 
 /** An API error with a message that is safe to show, plus per-field messages for forms. */
@@ -18,32 +19,38 @@ export class ApiError extends Error {
   }
 }
 
-type RequestOptions = Omit<RequestInit, 'body'> & { body?: unknown; skipRefresh?: boolean }
+type RequestOptions = Omit<RequestInit, 'body'> & {
+  body?: unknown
+  /** Sent as plain text instead of JSON (e.g. an uploaded CSV file). */
+  text?: string
+  skipRefresh?: boolean
+}
 
 // Calls stay relative (/api/...): Spring Boot serves this app, and in
 // development Vite forwards /api to Spring Boot on :8080.
 export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const response = await send(path, options)
-  if (response.status === 401 && !options.skipRefresh && useSession.getState().accessToken) {
+  if (response.status === 401 && !options.skipRefresh && useSession.getState().status === 'signedIn') {
     const refreshed = await refreshAccessToken()
-    if (refreshed) return parse<T>(await send(path, options))
-    useSession.getState().signOut()
+    if (refreshed === 'ok') return parse<T>(await send(path, options))
+    if (refreshed === 'refused') useSession.getState().signOut()
   }
   return parse<T>(response)
 }
 
-async function send(path: string, { body, skipRefresh: _skip, headers, ...init }: RequestOptions) {
+async function send(path: string, { body, text, skipRefresh: _skip, headers, ...init }: RequestOptions) {
   const token = useSession.getState().accessToken
+  const contentType = text !== undefined ? 'text/plain' : body !== undefined ? 'application/json' : null
   try {
     return await fetch(path, {
       ...init,
       credentials: 'same-origin',
       headers: {
-        ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}),
+        ...(contentType ? { 'Content-Type': contentType } : {}),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...headers,
       },
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: text !== undefined ? text : body !== undefined ? JSON.stringify(body) : undefined,
     })
   } catch {
     throw new ApiError(0, 'Cannot reach the server. Check the network and try again.')
@@ -67,19 +74,24 @@ async function parse<T>(response: Response): Promise<T> {
   )
 }
 
-// Several requests can hit 401 at the same moment; they share one refresh.
-let refreshing: Promise<boolean> | null = null
+/** ok = new token; refused = the server says sign in again; offline = server not reachable. */
+export type RefreshResult = 'ok' | 'refused' | 'offline'
 
-export function refreshAccessToken(): Promise<boolean> {
-  refreshing ??= (async () => {
+// Several requests can hit 401 at the same moment; they share one refresh.
+let refreshing: Promise<RefreshResult> | null = null
+
+export function refreshAccessToken(): Promise<RefreshResult> {
+  refreshing ??= (async (): Promise<RefreshResult> => {
     try {
       const response = await fetch('/api/auth/refresh', { method: 'POST', credentials: 'same-origin' })
-      if (!response.ok) return false
+      // A proxy/gateway error means the server itself is down, not that the session ended.
+      if (response.status >= 502) return 'offline'
+      if (!response.ok) return 'refused'
       const session = (await response.json()) as SessionResponse
       useSession.getState().signIn(session.accessToken, session.user)
-      return true
+      return 'ok'
     } catch {
-      return false
+      return 'offline'
     } finally {
       refreshing = null
     }

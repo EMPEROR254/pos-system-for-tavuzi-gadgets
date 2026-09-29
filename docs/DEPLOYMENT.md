@@ -15,6 +15,8 @@
    on the Hardware screen (see docs/HARDWARE.md for what to buy).
    SMS receipts and promotions need an Africa's Talking account: set `AT_USERNAME`,
    `AT_API_KEY` and (once approved) `AT_SENDER_ID`. Without a key, SMS are only logged.
+   KRA eTIMS stays `OFF` (invoices are kept, not sent) until the shop's device is
+   registered with KRA - see docs/ETIMS.md for the steps.
 4. `docker compose up -d --build`.
 5. Put Nginx or Caddy in front for HTTPS (Caddy gets certificates automatically):
    `app.example.co.ke { reverse_proxy localhost:8080 }`.

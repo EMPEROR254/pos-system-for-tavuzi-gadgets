@@ -41,4 +41,20 @@ public class SaleReturnLine {
     this.amount = amount;
     this.vatAmount = vat;
   }
+
+  public SaleLine getSaleLine() {
+    return saleLine;
+  }
+
+  public int getQuantity() {
+    return quantity;
+  }
+
+  public BigDecimal getAmount() {
+    return amount;
+  }
+
+  public BigDecimal getVatAmount() {
+    return vatAmount;
+  }
 }

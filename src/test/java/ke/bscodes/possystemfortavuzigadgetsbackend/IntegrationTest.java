@@ -28,7 +28,8 @@ import org.testcontainers.containers.PostgreSQLContainer;
       "app.bootstrap-owner.password=owner-pass-123",
       "app.bootstrap-owner.full-name=Test Owner",
       // Tests send queued SMS themselves (MessageService.queued()/sendOne()).
-      "app.sms.dispatch-enabled=false"
+      "app.sms.dispatch-enabled=false",
+      "app.etims.dispatch-enabled=false"
     })
 public abstract class IntegrationTest {
 

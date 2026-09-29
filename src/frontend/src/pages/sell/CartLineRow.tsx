@@ -2,7 +2,7 @@
 // the line total. No animations here - this is the busiest screen.
 import { useQuery } from '@tanstack/react-query'
 import type { PriceTier } from '../../services/sales'
-import { serialsInStock } from '../../services/stock'
+import { findSerials } from './findProducts'
 import { formatKes } from '../../utils/format'
 import { lineAmounts, serialsNeeded, unitOf, unitPrice, type CartLine } from './cartMath'
 
@@ -23,7 +23,7 @@ export function CartLineRow({ line, tier, onChange, onRemove }: Props) {
   // IMEIs/serials on the shelf for this product, offered as the cashier types.
   const onShelf = useQuery({
     queryKey: ['stock', 'serials', line.product.id],
-    queryFn: () => serialsInStock(line.product.id),
+    queryFn: () => findSerials(line.product.id),
     enabled: needed > 0,
     staleTime: 30_000,
   })

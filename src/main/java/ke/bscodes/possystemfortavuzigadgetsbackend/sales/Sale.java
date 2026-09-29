@@ -54,6 +54,11 @@ public class Sale {
   private BigDecimal changeDue;
   private Instant createdAt;
 
+  /** Made at a till that could not reach the server; syncedAt is when it arrived. */
+  private boolean offline;
+
+  private Instant syncedAt;
+
   @OneToMany(mappedBy = "sale", cascade = CascadeType.ALL)
   @OrderBy("lineNo")
   private List<SaleLine> lines = new ArrayList<>();
@@ -79,6 +84,15 @@ public class Sale {
     this.customerName = customerName;
     this.customerPhone = customerPhone;
     this.createdAt = now;
+  }
+
+  public void markSyncedFromOffline(Instant now) {
+    this.offline = true;
+    this.syncedAt = now;
+  }
+
+  public boolean isOffline() {
+    return offline;
   }
 
   public void setCustomerId(Long customerId) {

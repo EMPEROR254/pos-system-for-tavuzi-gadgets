@@ -16,6 +16,18 @@ const receipt: sales.Receipt = {
   paymentInstructions: ['M-Pesa Buy Goods Till: 123456', 'M-Pesa Paybill: 654321 Acc: TAVUZI'],
   returnPolicy: "No returns or exchanges without the owner's approval.",
   footer: ['Thank you for shopping with us!'],
+  etims: {
+    status: 'SENT',
+    invoiceNo: 7,
+    scuReceiptNo: 101,
+    totalReceiptNo: 101,
+    internalData: 'INTRL101',
+    signature: 'SIGN101',
+    scuId: 'KRACU0100000001',
+    mrcNo: 'WIS001',
+    scuDate: '20260928101500',
+    verifyUrl: 'https://etims-sbx.kra.go.ke/common/link/etims/receipt/indexEtimsReceiptData?Data=P051234567X00SIGN101',
+  },
   vatBreakdown: [
     { code: 'A', ratePercent: 0, taxable: 400, vat: 0, gross: 400 },
     { code: 'B', ratePercent: 16, taxable: 10000, vat: 1600, gross: 11600 },
@@ -70,6 +82,10 @@ describe('ReceiptPage', () => {
     expect(within(r).getByText('B VAT 16% on 10,000')).toBeInTheDocument()
     expect(within(r).getByText('M-Pesa Till SJK4H7XYZ1')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Next sale' })).toHaveAttribute('href', '/sell')
+    // KRA eTIMS details and a QR code customers can scan to check the invoice with KRA.
+    expect(within(r).getByText('KRACU0100000001')).toBeInTheDocument()
+    expect(within(r).getByText('SIGN101')).toBeInTheDocument()
+    expect(await within(r).findByRole('img', { name: 'QR code to check this invoice with KRA' })).toBeInTheDocument()
   })
 
   it('sends a cashier return with the owner approval', async () => {

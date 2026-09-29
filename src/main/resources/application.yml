@@ -80,6 +80,18 @@ app:
     promo-footer: ${SMS_PROMO_FOOTER:Reply STOP to opt out.}
     dispatch-enabled: ${SMS_DISPATCH_ENABLED:true}
     dispatch-interval-ms: 10000
+  # KRA eTIMS (OSCU). OFF keeps invoices queued until the shop's device is registered with KRA.
+  # cmc-key is a secret from KRA: keep it in .env.
+  etims:
+    mode: ${ETIMS_MODE:OFF}
+    base-url: ${ETIMS_BASE_URL:}
+    tin: ${ETIMS_TIN:}
+    branch-id: ${ETIMS_BRANCH_ID:00}
+    device-serial: ${ETIMS_DEVICE_SERIAL:}
+    cmc-key: ${ETIMS_CMC_KEY:}
+    default-item-class: ${ETIMS_DEFAULT_ITEM_CLASS:4321150000}
+    dispatch-enabled: ${ETIMS_DISPATCH_ENABLED:true}
+    dispatch-interval-ms: 30000
 
 mpesa:
   environment: ${MPESA_ENVIRONMENT:sandbox}

@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.List;
+import ke.bscodes.possystemfortavuzigadgetsbackend.etims.EtimsService;
 import ke.bscodes.possystemfortavuzigadgetsbackend.sales.SaleDtos.LineView;
 import ke.bscodes.possystemfortavuzigadgetsbackend.sales.SaleDtos.PaymentView;
 import ke.bscodes.possystemfortavuzigadgetsbackend.sales.SaleDtos.SaleView;
@@ -93,7 +94,7 @@ class ReceiptLayoutTest {
 
   @Test
   void printedReceiptShowsWhatTheSpecAsksFor() {
-    ReceiptView view = new ReceiptService(null, shop, null).build(sale);
+    ReceiptView view = new ReceiptService(null, shop, null, null).build(sale, null);
     String text = new String(EscPosReceipt.render(view, 48), StandardCharsets.US_ASCII);
 
     assertThat(text)
@@ -113,5 +114,48 @@ class ReceiptLayoutTest {
   void longTextWrapsBetweenWords() {
     assertThat(EscPosReceipt.wrap("No returns or exchanges without approval", 16))
         .containsExactly("No returns or", "exchanges", "without approval");
+  }
+
+  @Test
+  void signedEtimsInvoiceIsPrintedWithAQrCodeToCheckIt() {
+    var etims =
+        new EtimsService.ReceiptInfo(
+            "SENT",
+            7,
+            101L,
+            101L,
+            "INTRL101",
+            "SIGN101",
+            "KRACU0100000001",
+            "WIS001",
+            "20260928101500",
+            "https://etims-sbx.kra.go.ke/verify?Data=P051234567X00SIGN101");
+    ReceiptView view = new ReceiptService(null, shop, null, null).build(sale, etims);
+    byte[] bytes = EscPosReceipt.render(view, 48);
+    String text = new String(bytes, StandardCharsets.US_ASCII);
+
+    assertThat(text)
+        .contains("KRA eTIMS")
+        .contains("KRACU0100000001")
+        .contains("SIGN101")
+        .contains("https://etims-sbx.kra.go.ke/verify?Data=P051234567X00SIGN101");
+    // ESC/POS "print QR code" command (GS ( k ... 1 Q 0).
+    assertThat(text)
+        .contains(
+            new String(
+                new byte[] {0x1D, 0x28, 0x6B, 0x03, 0x00, 0x31, 0x51, 0x30},
+                StandardCharsets.US_ASCII));
+  }
+
+  @Test
+  void invoiceNotYetAtKraSaysSo() {
+    var pending =
+        new EtimsService.ReceiptInfo("PENDING", 8, null, null, null, null, null, null, null, null);
+    String text =
+        new String(
+            EscPosReceipt.render(
+                new ReceiptService(null, shop, null, null).build(sale, pending), 48),
+            StandardCharsets.US_ASCII);
+    assertThat(text).contains("KRA eTIMS invoice 8: being sent to KRA");
   }
 }

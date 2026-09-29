@@ -1,6 +1,7 @@
 // The receipt as shown on screen and printed from the browser. Narrow (like
 // till paper) and plain black-on-white when printed, whatever the theme.
-import type { Receipt } from '../../services/sales'
+import { QrCode } from '../../components/QrCode'
+import type { EtimsReceipt, Receipt } from '../../services/sales'
 import { formatDate, formatDateTime, formatKes } from '../../utils/format'
 
 const money = (n: number) => formatKes(n).replace('KES ', '')
@@ -80,6 +81,7 @@ export function ReceiptView({ receipt }: { receipt: Receipt }) {
         {sale.changeDue > 0 && <Row label="Change" value={money(sale.changeDue)} />}
       </dl>
       <hr className="my-2 border-dashed border-current opacity-40" />
+      {receipt.etims && <EtimsBlock etims={receipt.etims} />}
       <footer className="space-y-1 text-center">
         {receipt.paymentInstructions.map((line) => (
           <p key={line} className="font-bold">
@@ -101,5 +103,35 @@ function Row({ label, value, bold = false }: { label: string; value: string; bol
       <dt>{label}</dt>
       <dd>{value}</dd>
     </div>
+  )
+}
+
+/** KRA eTIMS: the signed invoice details and a QR code to check it with KRA. */
+function EtimsBlock({ etims }: { etims: EtimsReceipt }) {
+  if (etims.status !== 'SENT') {
+    return (
+      <>
+        <p className="text-center">KRA eTIMS invoice {etims.invoiceNo}: being sent to KRA</p>
+        <hr className="my-2 border-dashed border-current opacity-40" />
+      </>
+    )
+  }
+  return (
+    <>
+      <p className="text-center font-bold">KRA eTIMS</p>
+      <dl className="tabular-nums">
+        <Row label="Invoice no." value={String(etims.invoiceNo)} />
+        <Row label="SCU ID" value={etims.scuId ?? ''} />
+        <Row label="Receipt no." value={`${etims.scuReceiptNo}/${etims.totalReceiptNo}`} />
+        <Row label="Internal data" value={etims.internalData ?? ''} />
+        <Row label="Signature" value={etims.signature ?? ''} />
+      </dl>
+      {etims.verifyUrl && (
+        <div className="mt-2">
+          <QrCode value={etims.verifyUrl} label="QR code to check this invoice with KRA" />
+        </div>
+      )}
+      <hr className="my-2 border-dashed border-current opacity-40" />
+    </>
   )
 }

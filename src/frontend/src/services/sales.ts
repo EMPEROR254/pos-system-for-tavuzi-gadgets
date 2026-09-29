@@ -37,6 +37,8 @@ export type CheckoutRequest = {
   marketingOptIn?: boolean
   /** Queue an SMS receipt to the customer's phone. */
   smsReceipt?: boolean
+  /** Set for a sale made offline: when it really happened at the till. */
+  offlineCreatedAt?: string
 }
 
 export type SaleLineView = {
@@ -92,6 +94,21 @@ export type Receipt = {
   vatBreakdown: { code: string; ratePercent: number; taxable: number; vat: number; gross: number }[]
   returnPolicy: string | null
   footer: string[]
+  etims: EtimsReceipt | null
+}
+
+/** The KRA eTIMS part of a receipt: PENDING until KRA signs it, then SENT with KRA's details. */
+export type EtimsReceipt = {
+  status: 'PENDING' | 'SENT' | 'REJECTED'
+  invoiceNo: number
+  scuReceiptNo: number | null
+  totalReceiptNo: number | null
+  internalData: string | null
+  signature: string | null
+  scuId: string | null
+  mrcNo: string | null
+  scuDate: string | null
+  verifyUrl: string | null
 }
 
 export type SaleFilters = {
