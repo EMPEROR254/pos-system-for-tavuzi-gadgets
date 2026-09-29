@@ -10,5 +10,12 @@ window.matchMedia = ((query: string) => ({
   removeEventListener: () => {},
 })) as unknown as typeof window.matchMedia
 
+// Charts (Recharts) watch their size; jsdom has no ResizeObserver.
+globalThis.ResizeObserver ??= class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+} as unknown as typeof ResizeObserver
+
 // Toasts live in a global store: start every test without leftovers.
 beforeEach(() => useToasts.setState({ toasts: [] }))

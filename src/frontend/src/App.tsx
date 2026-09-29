@@ -32,6 +32,8 @@ const HardwarePage = lazy(() => import('./pages/settings/HardwarePage'))
 const SyncPage = lazy(() => import('./pages/sync/SyncPage'))
 const OfflineReceiptPage = lazy(() => import('./pages/sync/OfflineReceiptPage'))
 const MpesaReconciliationPage = lazy(() => import('./pages/reports/MpesaReconciliationPage'))
+const DashboardPage = lazy(() => import('./pages/admin/DashboardPage'))
+const ReportsPage = lazy(() => import('./pages/reports/ReportsPage'))
 const EtimsPage = lazy(() => import('./pages/settings/EtimsPage'))
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
 
@@ -128,6 +130,8 @@ export function AppRoutes() {
         <Route path="settings/hardware" element={guarded('MANAGE_SETTINGS', <HardwarePage />)} />
         <Route path="sync" element={guarded('MAKE_SALE', <SyncPage />)} />
         <Route path="sync/receipt/:clientRef" element={guarded('MAKE_SALE', <OfflineReceiptPage />)} />
+        <Route path="dashboard" element={guarded('VIEW_REPORTS', <DashboardPage />)} />
+        <Route path="reports" element={guarded('VIEW_REPORTS', <ReportsPage />)} />
         <Route path="reports/mpesa" element={guarded('VIEW_REPORTS', <MpesaReconciliationPage />)} />
         <Route path="settings/etims" element={guarded('VIEW_REPORTS', <EtimsPage />)} />
         <Route path="*" element={<NotFoundPage />} />

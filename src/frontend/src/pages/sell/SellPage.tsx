@@ -28,6 +28,7 @@ import { useCart } from './cartStore'
 import { HeldSalesDialog } from './HeldSalesDialog'
 import { PaymentDialog } from './PaymentDialog'
 import { ProductSearch } from './ProductSearch'
+import { ShiftBar } from './ShiftBar'
 
 export default function SellPage() {
   const user = useSession((s) => s.user)
@@ -142,6 +143,7 @@ export default function SellPage() {
   return (
     <div className="grid gap-4 pb-28 lg:grid-cols-[1fr_22rem] lg:pb-0">
       <section className="space-y-3">
+        <ShiftBar />
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h1 className="text-2xl font-semibold tracking-tight">Sell</h1>
           <div className="flex gap-2">

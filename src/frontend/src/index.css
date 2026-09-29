@@ -18,6 +18,11 @@
   --danger: #b91c1c;
   --danger-soft: #fee2e2;
   --success: #15803d;
+  /* Chart series (dashboard): readable on the light card. */
+  --chart-1: #0f766e;
+  --chart-2: #f59e0b;
+  --chart-3: #6366f1;
+  --chart-4: #e11d48;
 }
 
 .dark {
@@ -32,6 +37,10 @@
   --danger: #f87171;
   --danger-soft: #450a0a;
   --success: #4ade80;
+  --chart-1: #2dd4bf;
+  --chart-2: #fbbf24;
+  --chart-3: #a5b4fc;
+  --chart-4: #fb7185;
 }
 
 @theme inline {

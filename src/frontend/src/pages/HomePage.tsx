@@ -1,5 +1,4 @@
 // The first screen after sign-in: a greeting and what this person may do.
-// Later milestones add the sale screen, stock and reports shortcuts here.
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router'
 import { stockSummary } from '../services/stock'
@@ -71,6 +70,14 @@ export default function HomePage() {
             className="mt-6 mr-2 inline-flex min-h-11 items-center rounded-xl bg-brand px-4 text-sm font-medium text-brand-foreground shadow-sm hover:opacity-90"
           >
             Start selling
+          </Link>
+        )}
+        {can(user, 'VIEW_REPORTS') && (
+          <Link
+            to="/dashboard"
+            className="mt-6 mr-2 inline-flex min-h-11 items-center rounded-xl border border-border px-4 text-sm font-medium hover:bg-background"
+          >
+            Dashboard and reports
           </Link>
         )}
         {can(user, 'MANAGE_USERS') && (

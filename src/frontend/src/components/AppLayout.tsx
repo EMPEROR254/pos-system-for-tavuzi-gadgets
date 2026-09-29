@@ -12,14 +12,15 @@ import { ThemeToggle } from './ThemeToggle'
 /** more: shown under "More" on laptops (everything is listed in the phone menu). */
 type NavItem = { to: string; label: string; permission?: Permission; more?: boolean }
 
-// Later milestones add Reports here.
 const NAV: NavItem[] = [
   { to: '/', label: 'Home' },
+  { to: '/dashboard', label: 'Dashboard', permission: 'VIEW_REPORTS' },
   { to: '/sell', label: 'Sell', permission: 'MAKE_SALE' },
   { to: '/sales', label: 'Sales', permission: 'MAKE_SALE' },
   { to: '/stock', label: 'Stock', permission: 'MANAGE_STOCK' },
   { to: '/customers', label: 'Customers', permission: 'MANAGE_CUSTOMERS' },
-  { to: '/reports/mpesa', label: 'M-Pesa', permission: 'VIEW_REPORTS' },
+  { to: '/reports', label: 'Reports', permission: 'VIEW_REPORTS' },
+  { to: '/reports/mpesa', label: 'M-Pesa', permission: 'VIEW_REPORTS', more: true },
   { to: '/warranty', label: 'Warranty', permission: 'MAKE_SALE', more: true },
   { to: '/messages', label: 'SMS', permission: 'SEND_PROMOTIONS', more: true },
   { to: '/admin/products', label: 'Products', permission: 'MANAGE_PRODUCTS', more: true },

@@ -38,6 +38,31 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   return parse<T>(response)
 }
 
+/**
+ * Downloads a file from the API (e.g. a PDF report) with the user's token, then hands it to the
+ * browser as a normal download. A plain link can't be used: it would not carry the token.
+ */
+export async function download(path: string, fallbackName: string): Promise<void> {
+  let response = await send(path, {})
+  if (response.status === 401 && useSession.getState().status === 'signedIn') {
+    const refreshed = await refreshAccessToken()
+    if (refreshed === 'ok') response = await send(path, {})
+    if (refreshed === 'refused') useSession.getState().signOut()
+  }
+  if (!response.ok) return parse<never>(response)
+  const blob = await response.blob()
+  const name = /filename="?([^";]+)"?/.exec(response.headers.get('Content-Disposition') ?? '')?.[1] ?? fallbackName
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = name
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  // Give the browser a moment to start the download before freeing the memory.
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
 async function send(path: string, { body, text, skipRefresh: _skip, headers, ...init }: RequestOptions) {
   const token = useSession.getState().accessToken
   const contentType = text !== undefined ? 'text/plain' : body !== undefined ? 'application/json' : null

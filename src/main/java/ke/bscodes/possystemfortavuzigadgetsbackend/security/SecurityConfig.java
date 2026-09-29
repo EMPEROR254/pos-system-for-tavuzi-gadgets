@@ -1,6 +1,7 @@
 package ke.bscodes.possystemfortavuzigadgetsbackend.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.DispatcherType;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.time.Clock;
@@ -65,7 +66,11 @@ public class SecurityConfig {
         .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(
             auth ->
-                auth.requestMatchers(
+                // A streamed download (CSV export) finishes in a second "async" dispatch that
+                // carries no token; the request itself was already checked, so let it finish.
+                auth.dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR)
+                    .permitAll()
+                    .requestMatchers(
                         "/api/auth/login",
                         "/api/auth/refresh",
                         "/api/auth/logout",
