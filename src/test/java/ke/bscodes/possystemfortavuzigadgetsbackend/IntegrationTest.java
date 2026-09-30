@@ -30,7 +30,8 @@ import org.testcontainers.containers.PostgreSQLContainer;
       // Tests send queued SMS themselves (MessageService.queued()/sendOne()).
       "app.sms.dispatch-enabled=false",
       "app.sms.callback-token=test-callback-token-123",
-      "app.etims.dispatch-enabled=false"
+      "app.etims.dispatch-enabled=false",
+      "app.social.dispatch-enabled=false"
     })
 public abstract class IntegrationTest {
 

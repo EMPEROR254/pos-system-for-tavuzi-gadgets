@@ -76,7 +76,9 @@ public class SecurityConfig {
                         "/api/auth/logout",
                         "/api/status",
                         "/api/mpesa/callback",
-                        "/api/sms/callbacks/**")
+                        "/api/sms/callbacks/**",
+                        "/api/social/callback/**",
+                        "/api/social/images/**")
                     .permitAll()
                     .requestMatchers("/api/**")
                     .authenticated()

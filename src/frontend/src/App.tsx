@@ -34,6 +34,7 @@ const OfflineReceiptPage = lazy(() => import('./pages/sync/OfflineReceiptPage'))
 const MpesaReconciliationPage = lazy(() => import('./pages/reports/MpesaReconciliationPage'))
 const DashboardPage = lazy(() => import('./pages/admin/DashboardPage'))
 const ReportsPage = lazy(() => import('./pages/reports/ReportsPage'))
+const SocialPage = lazy(() => import('./pages/social/SocialPage'))
 const EtimsPage = lazy(() => import('./pages/settings/EtimsPage'))
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
 
@@ -126,6 +127,7 @@ export function AppRoutes() {
         <Route path="stock/deliveries/new" element={guarded('MANAGE_STOCK', <DeliveryPage />)} />
         <Route path="stock/count" element={guarded('MANAGE_STOCK', <CountPage />)} />
         <Route path="customers" element={guarded('MANAGE_CUSTOMERS', <CustomersPage />)} />
+        <Route path="social" element={guarded('SEND_PROMOTIONS', <SocialPage />)} />
         <Route path="messages" element={guarded('SEND_PROMOTIONS', <MessagesPage />)} />
         <Route path="settings/hardware" element={guarded('MANAGE_SETTINGS', <HardwarePage />)} />
         <Route path="sync" element={guarded('MAKE_SALE', <SyncPage />)} />

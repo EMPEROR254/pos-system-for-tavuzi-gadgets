@@ -108,3 +108,7 @@ Idea: Point of Sale (POS) system for TAVUZI GADGETS. Electronics shop: Accessori
 4. M-Pesa payments, KRA eTIMS invoices, Works offline and syncs later (about 1 h 45 min)
 5. SMS messages (about 20 min)
 6. Admin dashboard and reports (about 20 min)
+
+## Added features
+
+- Social media: link Facebook Page, Instagram, TikTok and WhatsApp Business, and post a picture with a headline and description to the chosen accounts in one go.

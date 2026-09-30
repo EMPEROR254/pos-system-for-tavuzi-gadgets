@@ -14,6 +14,11 @@ spring:
       hibernate.jdbc.time_zone: UTC
   flyway:
     enabled: true
+  # Pictures for social media posts (phone photos can be a few MB).
+  servlet:
+    multipart:
+      max-file-size: 8MB
+      max-request-size: 9MB
 server:
   port: 8080
   # The web app manifest (install on the Android till) needs its proper type.
@@ -98,6 +103,20 @@ app:
     default-item-class: ${ETIMS_DEFAULT_ITEM_CLASS:4321150000}
     dispatch-enabled: ${ETIMS_DISPATCH_ENABLED:true}
     dispatch-interval-ms: 30000
+  # Social media posts (Facebook Page, Instagram business, TikTok). Linking needs the
+  # shop's public HTTPS address; the app secrets and token key are secrets: keep them in .env.
+  social:
+    public-url: ${APP_PUBLIC_URL:}
+    token-key: ${SOCIAL_TOKEN_KEY:}
+    meta-app-id: ${META_APP_ID:}
+    meta-app-secret: ${META_APP_SECRET:}
+    meta-graph-url: ${META_GRAPH_URL:https://graph.facebook.com/v21.0}
+    meta-dialog-url: ${META_DIALOG_URL:https://www.facebook.com/v21.0/dialog/oauth}
+    tiktok-client-key: ${TIKTOK_CLIENT_KEY:}
+    tiktok-client-secret: ${TIKTOK_CLIENT_SECRET:}
+    tiktok-api-url: ${TIKTOK_API_URL:https://open.tiktokapis.com}
+    tiktok-auth-url: ${TIKTOK_AUTH_URL:https://www.tiktok.com/v2/auth/authorize/}
+    dispatch-enabled: ${SOCIAL_DISPATCH_ENABLED:true}
 
 mpesa:
   environment: ${MPESA_ENVIRONMENT:sandbox}

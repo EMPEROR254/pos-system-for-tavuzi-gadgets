@@ -21,6 +21,8 @@
    incoming messages `.../<token>/inbound` (needs a shortcode or two-way number,
    so "Reply STOP" works) and bulk opt-out `.../<token>/opt-out`.
    Promotions are held between `SMS_QUIET_START` and `SMS_QUIET_END` (Nairobi time).
+   Social media posting (Facebook, Instagram, TikTok) needs `APP_PUBLIC_URL`,
+   `SOCIAL_TOKEN_KEY` and the app keys - see docs/SOCIAL_MEDIA.md.
    KRA eTIMS stays `OFF` (invoices are kept, not sent) until the shop's device is
    registered with KRA - see docs/ETIMS.md for the steps.
 4. `docker compose up -d --build`.

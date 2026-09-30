@@ -23,6 +23,7 @@ const NAV: NavItem[] = [
   { to: '/reports/mpesa', label: 'M-Pesa', permission: 'VIEW_REPORTS', more: true },
   { to: '/warranty', label: 'Warranty', permission: 'MAKE_SALE', more: true },
   { to: '/messages', label: 'SMS', permission: 'SEND_PROMOTIONS', more: true },
+  { to: '/social', label: 'Social media', permission: 'SEND_PROMOTIONS', more: true },
   { to: '/admin/products', label: 'Products', permission: 'MANAGE_PRODUCTS', more: true },
   { to: '/settings/etims', label: 'KRA eTIMS', permission: 'VIEW_REPORTS', more: true },
   { to: '/admin/users', label: 'Staff', permission: 'MANAGE_USERS', more: true },

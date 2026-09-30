@@ -23,6 +23,8 @@ type RequestOptions = Omit<RequestInit, 'body'> & {
   body?: unknown
   /** Sent as plain text instead of JSON (e.g. an uploaded CSV file). */
   text?: string
+  /** Sent as multipart/form-data (e.g. a picture); the browser sets the content type. */
+  form?: FormData
   skipRefresh?: boolean
 }
 
@@ -63,9 +65,9 @@ export async function download(path: string, fallbackName: string): Promise<void
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
-async function send(path: string, { body, text, skipRefresh: _skip, headers, ...init }: RequestOptions) {
+async function send(path: string, { body, text, form, skipRefresh: _skip, headers, ...init }: RequestOptions) {
   const token = useSession.getState().accessToken
-  const contentType = text !== undefined ? 'text/plain' : body !== undefined ? 'application/json' : null
+  const contentType = form ? null : text !== undefined ? 'text/plain' : body !== undefined ? 'application/json' : null
   try {
     return await fetch(path, {
       ...init,
@@ -75,7 +77,7 @@ async function send(path: string, { body, text, skipRefresh: _skip, headers, ...
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...headers,
       },
-      body: text !== undefined ? text : body !== undefined ? JSON.stringify(body) : undefined,
+      body: form ?? (text !== undefined ? text : body !== undefined ? JSON.stringify(body) : undefined),
     })
   } catch {
     throw new ApiError(0, 'Cannot reach the server. Check the network and try again.')
