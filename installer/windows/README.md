@@ -42,7 +42,9 @@ restart the PC or the `pos-system-for-tavuzi-gadgets` service (Services app → 
 ## Upgrading
 
 Run the newer setup file on the PC. The database, passwords and settings are kept; new
-settings from `.env.example` are added with their example values.
+settings from `.env.example` are added with their example values. Before the new version
+starts, setup backs up the database to `backups\before-upgrade-<date>.dump` (newest 5 kept);
+if that backup fails, setup stops and the database is left untouched.
 
 ## Restoring a backup
 

@@ -4,6 +4,11 @@
 # as soon as the PC is on after that). Saves one file per night in
 # C:\ProgramData\pos-system-for-tavuzi-gadgets\backups and keeps the newest 14.
 # Restore a backup with pg_restore (see installer/windows/README.md in the project).
+#
+# setup.ps1 also runs it with -BeforeUpgrade just before a new version starts.
+# Those files are named before-upgrade-<date>.dump and the newest 5 are kept,
+# apart from the nightly ones, so they survive two weeks of nightly clean-up.
+param([switch]$BeforeUpgrade)
 $ErrorActionPreference = 'Stop'
 
 $Slug = 'pos-system-for-tavuzi-gadgets'
@@ -12,12 +17,15 @@ $Backups = Join-Path $DataDir 'backups'
 $Logs = Join-Path $DataDir 'logs'
 $PgBin = Join-Path $PSScriptRoot 'pgsql\bin'
 $KeepNewest = 14
+if ($BeforeUpgrade) { $KeepNewest = 5 }
 
 New-Item -ItemType Directory -Force -Path $Backups, $Logs | Out-Null
 Start-Transcript -Path (Join-Path $Logs 'backup.log') -Append | Out-Null
 
 $state = Get-Content -Path (Join-Path $DataDir 'config\install.json') -Raw | ConvertFrom-Json
-$file = Join-Path $Backups ("$($state.dbName)-" + (Get-Date -Format 'yyyy-MM-dd_HHmm') + '.dump')
+$prefix = $state.dbName
+if ($BeforeUpgrade) { $prefix = 'before-upgrade' }
+$file = Join-Path $Backups ("$prefix-" + (Get-Date -Format 'yyyy-MM-dd_HHmm') + '.dump')
 
 $env:PGPASSWORD = $state.dbPassword
 try {
@@ -28,6 +36,6 @@ try {
 }
 Write-Output "Backup saved: $file"
 
-Get-ChildItem -Path $Backups -Filter '*.dump' | Sort-Object LastWriteTime -Descending |
+Get-ChildItem -Path $Backups -Filter "$prefix-*.dump" | Sort-Object LastWriteTime -Descending |
   Select-Object -Skip $KeepNewest | Remove-Item -Force
 Stop-Transcript | Out-Null

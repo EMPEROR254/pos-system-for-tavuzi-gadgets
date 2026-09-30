@@ -89,6 +89,8 @@ if ($firstInstall) {
 # ---------------------------------------------------------------------------
 # 2. PostgreSQL: create the database files once, run it as a Windows service.
 # ---------------------------------------------------------------------------
+# Remembered for the backup below: an upgrade of a PC that already has data.
+$hadDatabase = Test-Path (Join-Path $PgData 'PG_VERSION')
 if (-not (Test-Path (Join-Path $PgData 'PG_VERSION'))) {
   # initdb refuses to run as administrator: it restarts itself with the
   # Administrators group switched off. So it can't read config\ (admins only)
@@ -146,6 +148,15 @@ try {
   }
 } finally {
   Remove-Item Env:PGPASSWORD -ErrorAction SilentlyContinue
+}
+
+# Upgrades: back up the database before the new app starts (its first start
+# runs the new database migrations). A failed backup stops the setup here, so
+# the client's data is never changed without a fresh backup.
+if ($hadDatabase) {
+  Invoke-Checked 'powershell.exe' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File',
+    (Join-Path $InstallDir 'backup.ps1'), '-BeforeUpgrade')
+  Write-Output 'Database backed up before the upgrade (backups\before-upgrade-*.dump).'
 }
 
 # ---------------------------------------------------------------------------

@@ -89,10 +89,23 @@ jobs:
           if ($code -eq '000') { throw 'The app is not answering after the install' }
           Write-Output "The app answers on port $($state.appPort) (HTTP $code)."
 
+      - name: Install it again as an upgrade and check the data was backed up first
+        run: |
+          $exe = Get-ChildItem installer\windows\Output\*.exe | Select-Object -First 1
+          $p = Start-Process $exe.FullName -ArgumentList '/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', '/LOG=upgrade.log' -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "The upgrade failed (exit code $($p.ExitCode))" }
+          $dump = Get-ChildItem "$env:ProgramData\pos-system-for-tavuzi-gadgets\backups\before-upgrade-*.dump" -ErrorAction SilentlyContinue
+          if (-not $dump) { throw 'No backup was made before the upgrade' }
+          $state = Get-Content "$env:ProgramData\pos-system-for-tavuzi-gadgets\config\install.json" -Raw | ConvertFrom-Json
+          $code = & curl.exe -s -o NUL -w '%{http_code}' "http://localhost:$($state.appPort)/"
+          if ($code -eq '000') { throw 'The app is not answering after the upgrade' }
+          Write-Output "Upgrade OK: backup $($dump[0].Name), app answers (HTTP $code)."
+
       - name: Show the logs
         if: failure()
         run: |
           Get-Content install.log -Tail 60 -ErrorAction SilentlyContinue
+          Get-Content upgrade.log -Tail 60 -ErrorAction SilentlyContinue
           Get-ChildItem "$env:ProgramData\pos-system-for-tavuzi-gadgets\logs" -ErrorAction SilentlyContinue | ForEach-Object {
             Write-Output "===== $($_.Name)"
             Get-Content $_.FullName -Tail 80
