@@ -90,13 +90,24 @@ if ($firstInstall) {
 # 2. PostgreSQL: create the database files once, run it as a Windows service.
 # ---------------------------------------------------------------------------
 if (-not (Test-Path (Join-Path $PgData 'PG_VERSION'))) {
-  $pwFile = Join-Path $ConfigDir 'initdb-password.tmp'
+  # initdb refuses to run as administrator: it restarts itself with the
+  # Administrators group switched off. So it can't read config\ (admins only)
+  # and may not write under ProgramData. Give this user account itself access
+  # to an empty database folder and to a private folder for the password file.
+  $me = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+  $pwDir = Join-Path $DataDir 'setup-tmp'
+  foreach ($dir in @($PgData, $pwDir)) {
+    New-Item -ItemType Directory -Force -Path $dir | Out-Null
+    Invoke-Checked 'icacls.exe' @($dir, '/inheritance:r', '/grant:r', "*${me}:(OI)(CI)F",
+      '*S-1-5-32-544:(OI)(CI)F', '*S-1-5-18:(OI)(CI)F', '/Q')
+  }
+  $pwFile = Join-Path $pwDir 'initdb-password.tmp'
   Set-Content -Path $pwFile -Value $state.adminPassword -Encoding ASCII -NoNewline
   try {
     Invoke-Checked (Join-Path $PgBin 'initdb.exe') @('-D', $PgData, '-U', 'postgres',
       "--pwfile=$pwFile", '-A', 'scram-sha-256', '-E', 'UTF8', '--locale=C')
   } finally {
-    Remove-Item -Path $pwFile -Force -ErrorAction SilentlyContinue
+    Remove-Item -Path $pwDir -Recurse -Force -ErrorAction SilentlyContinue
   }
   # Only this PC can reach the database, on its own port.
   Add-Content -Path (Join-Path $PgData 'postgresql.conf') -Encoding ASCII -Value @(
