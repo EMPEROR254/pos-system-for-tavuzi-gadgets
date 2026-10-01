@@ -250,9 +250,11 @@ $javaArgs = "-XX:MaxRAMPercentage=40 -jar ""$InstallDir\app\app.jar"" --spring.p
 </service>
 "@ | Set-Content -Path (Join-Path $InstallDir 'app\service.xml') -Encoding UTF8
 
-if (Get-Service -Name $Slug -ErrorAction SilentlyContinue) {
-  Invoke-Checked $serviceExe @('refresh')
-} else {
+# Upgrades: the service already exists. WinSW 2 reads service.xml (written just
+# above) every time the service starts, so starting it is enough. WinSW 2 has
+# no "refresh" command, and uninstall + install can fail with "marked for
+# deletion" while the Services window is open, so the service is left as is.
+if (-not (Get-Service -Name $Slug -ErrorAction SilentlyContinue)) {
   Invoke-Checked $serviceExe @('install')
 }
 Start-Service -Name $Slug
